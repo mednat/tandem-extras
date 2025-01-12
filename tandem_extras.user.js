@@ -22,6 +22,16 @@ const PHOTO_GENDER_CACHE_KEY = 'photoGenderCache';
 const PHASH_TO_ID = 'pHashToId';
 const ID_TO_PHASH = 'idToPHash';
 
+unsafeWindow.checkBadCacheVals = async () => {
+    [PROFILE_BLOCKLIST, CHATTED_CACHE].forEach(async (gmKey) => {
+        if ((await GM.getValue(gmKey, [])).some(x => !x)) console.error(`falsy in ${gmKey}`);
+    });
+    [ID_TO_PHASH, PHASH_TO_ID].forEach(async (gmKey) => {
+        if (Object.entries(await GM.getValue(gmKey, {})).some(([k,v]) => !k || !v)) console.error(`falsy in ${gmKey}`);
+    });
+    if (Object.entries(await GM.getValue(PHOTO_GENDER_CACHE_KEY, {})).some(([k,v]) => !k || (!v && v!=0))) console.error(`falsy in ${PHOTO_GENDER_CACHE_KEY}`);
+};
+
 const handleDoubleKeypress = (() => {
     const keyPresses = new Map(); 
     return (key, action) => (Date.now() - keyPresses.get(key) < 250) ? action() : keyPresses.set(key, Date.now());
