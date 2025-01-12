@@ -43,10 +43,7 @@ async function waitForElement(selector, documentScope = document.body, timeout =
     return new Promise((resolve, reject) => {
         const observer = new MutationObserver(() => {
             const element = documentScope.querySelector(selector);
-            if (element) {
-                observer.disconnect();
-                resolve(element);
-            }
+            if (element) { observer.disconnect(); resolve(element); }
         });
         observer.observe(documentScope, { childList: true, subtree: true });
         setTimeout(() => (observer.disconnect(), reject(`timeout waiting for element ${selector}`)), timeout);
@@ -62,10 +59,7 @@ async function loadImage(url) {
                 responseType: 'blob'
             })).response),
         crossOrigin: 'anonymous',
-        onload: () => {
-            URL.revokeObjectURL(img.src);
-            resolve(img);
-        },
+        onload: () => { URL.revokeObjectURL(img.src); resolve(img); },
         onerror: reject
     }));
 }
@@ -134,10 +128,7 @@ const chatsHandler = (() => {
 
         unsafeWindow.deleteChatsWithString = async (s) => {
             for (let chat of document.querySelectorAll('.styles_InfiniteScrollContainer__rYqKF li.styles_Conversation__IoGWS')) {
-                if (chat.querySelector('.styles_conversationPreview__qsCW9 p')?.textContent.includes(s)) {
-                    await deleteChat(chat);
-                    console.debug('deleted chat');
-                }
+                if (chat.querySelector('.styles_conversationPreview__qsCW9 p')?.textContent.includes(s)) await deleteChat(chat);
             }
         };
 
@@ -276,17 +267,11 @@ const listingsHandler = (() => {
 
     async function getGenderByPhoto(img) {
         const results = await faceapi.detectSingleFace(img).withAgeAndGender();
-        if (results) {
-            const { gender, genderProbability } = results;
-            return gender === 'male' ? genderProbability : 1 - genderProbability;
-        }
+        if (results) return results.gender === 'male' ? results.genderProbability : 1 - results.genderProbability;
     }
 
     async function getGenderByPhotoAndCache(img, id, photoGenderCache) {
-        if (id in photoGenderCache) {
-            console.debug(`photo gender in cache, id: ${id}`);
-            return photoGenderCache[id];
-        }
+        if (id in photoGenderCache) return photoGenderCache[id];
 
         try {
             const faceGender = await getGenderByPhoto(img);
