@@ -289,7 +289,7 @@ const listingsHandler = (() => {
 
         try {
             const faceGender = await getGenderByPhoto(img);
-            if (!faceGender) return console.warn(`no faceapi gender result for ID ${id}`);
+            if (!faceGender) return console.debug(`no faceapi gender result for ID ${id}`);
 
             console.debug(`face-api result for id ${id}: ${faceGender} male probability`);
             return photoGenderCache[id] = faceGender;
