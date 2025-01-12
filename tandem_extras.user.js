@@ -4,25 +4,18 @@
 // @match       *://app.tandem.net/*
 // @require     https://unpkg.com/imagehash-web/dist/imagehash-web.min.js
 // @require     https://cdn.jsdelivr.net/npm/face-api.js/dist/face-api.min.js
-// @require     https://raw.githubusercontent.com/mednat/tandem-extras/refs/heads/main/fb-leak_forename_male-probs.js
+// @require     https://rawcdn.githack.com/mednat/tandem-extras/refs/heads/main/fb-leak_forename_male-probs.js
 // @grant       GM.setValue
 // @grant       GM.getValue
 // @grant       GM.xmlHttpRequest
 // @top-level-await
 // ==/UserScript==
 
-
 'use strict';
 
-// all "gender" values are P[male]
-// data subset adapted from https://github.com/philipperemy/name-dataset
 const firstNameMaleProbs = window.firstNameMaleProbs;
+const FACEAPI_MODELS_URL = 'https://rawcdn.githack.com/justadudewhohacks/face-api.js/refs/heads/master/weights';
 
-const FACEAPI_MODELS_URL = 'https://raw.githubusercontent.com/justadudewhohacks/face-api.js/refs/heads/master/weights';
-
-// TODO: use githack instead of githubusercontent
-
-// TODO: set reminder to save backups of GM storage (prev localStorage) 
 const CHATTED_CACHE = 'chattedCache';
 const PROFILE_BLOCKLIST = 'profileBlocklist';
 const PHOTO_GENDER_CACHE_KEY = 'photoGenderCache';
