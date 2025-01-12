@@ -1,12 +1,13 @@
 // ==UserScript==
-// @name         Tandem extras
-// @description  filter profiles by 1) gender (name/photo) 2) manual blocklist 3) already-chatted; kbd shortcuts
-// @match        *://app.tandem.net/*
-// @require      https://unpkg.com/imagehash-web/dist/imagehash-web.min.js
-// @require      https://cdn.jsdelivr.net/npm/face-api.js/dist/face-api.min.js
-// @grant        GM.setValue
-// @grant        GM.getValue
-// @grant        GM.xmlHttpRequest
+// @name        Tandem extras
+// @description filter profiles by 1) gender (name/photo) 2) manual blocklist 3) already-chatted; kbd shortcuts
+// @match       *://app.tandem.net/*
+// @require     https://unpkg.com/imagehash-web/dist/imagehash-web.min.js
+// @require     https://cdn.jsdelivr.net/npm/face-api.js/dist/face-api.min.js
+// @require     https://raw.githubusercontent.com/mednat/tandem-extras/refs/heads/main/fb-leak_forename_male-probs.js
+// @grant       GM.setValue
+// @grant       GM.getValue
+// @grant       GM.xmlHttpRequest
 // @top-level-await
 // ==/UserScript==
 
@@ -14,17 +15,12 @@
 'use strict';
 
 // all "gender" values are P[male]
-
 // data subset adapted from https://github.com/philipperemy/name-dataset
-let firstNameMaleProbs;
-const NAME_GENDER_PROB_DATA = 'fbleak_forename-maleProb'; 
-// const NAME_GENDER_PROB_DATA = 'https://dl.dropboxusercontent.com/scl/fi/dnyffh36jzezwokelx726/fbleak_forename-maleProb.json?rlkey=eyygn550mssgz1j7k69sn3uuj';
-/* alternate data sources for first-name male-probability: TODO: incorporate later
-    'espana_forename-maleProb'
-    'us-inmates_forename-maleProb'
-*/
+const firstNameMaleProbs = window.firstNameMaleProbs;
 
 const FACEAPI_MODELS_URL = 'https://raw.githubusercontent.com/justadudewhohacks/face-api.js/refs/heads/master/weights';
+
+// TODO: use githack instead of githubusercontent
 
 // TODO: set reminder to save backups of GM storage (prev localStorage) 
 const CHATTED_CACHE = 'chattedCache';
@@ -377,11 +373,7 @@ const listingsHandler = (() => {
     let faceapiModelsLoading = false;
     const profileListingsObserver = new MutationObserver(filterProfiles);
     async function visit() {
-        if (!firstNameMaleProbs) {
-            firstNameMaleProbs = await GM.getValue(NAME_GENDER_PROB_DATA, {});
-            console.log('First-name male-probabilities loaded!');
-        }
-        // TODO: GM.xmlHttpRequest({ method: 'GET', url: NAME_GENDER_PROB_DATA }).then(r => JSON.parse(r.responseText));
+        if (!firstNameMaleProbs) console.error('First-name male-probabilities not loaded!');
 
         if (!faceapiModelsLoading) {
             faceapiModelsLoading = true;
