@@ -33,7 +33,7 @@ unsafeWindow.checkBadCacheVals = async () => {
 };
 
 const handleDoubleKeypress = (() => {
-    const keyPresses = new Map(); 
+    const keyPresses = new Map();
     return (key, action) => (Date.now() - keyPresses.get(key) < 250) ? action() : keyPresses.set(key, Date.now());
 })();
 
@@ -111,7 +111,7 @@ const chatsHandler = (() => {
     function onChatKeydown(e) {
         if (e.target.tagName === 'TEXTAREA') return;
         ({
-            'j': () => navigateChats(1), //down 
+            'j': () => navigateChats(1), //down
             'k': () => navigateChats(-1), //up
             'D': () => handleDoubleKeypress('D', () => {
                 const activeChat = document.querySelector('.styles_active__zmQpO');
@@ -175,7 +175,7 @@ const profileHandler = (() => {
     async function toggleProfileBlocklist() {
         const blocklist = new Set(await GM.getValue(PROFILE_BLOCKLIST, []));
 
-        const profileId = location.pathname.split('/').pop(); 
+        const profileId = location.pathname.split('/').pop();
         console.debug('profile ID to toggle blocklist is: ', profileId);
 
         if (blocklist.delete(profileId)) {
@@ -200,7 +200,7 @@ const profileHandler = (() => {
             if (!isBlocked) {
                 (await waitForElement('.styles_button__td6Xf.styles_warning__QmUuQ')).click();
                 createAlertBanner(`blocked on Tandem!`, 'rgb(255, 55, 55)');
-            } else createAlertBanner(`unblocked on Tandem!`, 'rgb(55, 255, 55)'); 
+            } else createAlertBanner(`unblocked on Tandem!`, 'rgb(55, 255, 55)');
         } catch (error) { console.error('Error during UI-based blocking:', error); }
     }
 
@@ -258,7 +258,7 @@ const listingsHandler = (() => {
         const name = rawName.toLowerCase();
         const plainName = name.normalize("NFD").replace(/[\u0300-\u036f]/g, ""); //no unicode combining chars e.g. diacritics
 
-        if (name in firstNameMaleProbs) return firstNameMaleProbs[name];  
+        if (name in firstNameMaleProbs) return firstNameMaleProbs[name];
         if (plainName in firstNameMaleProbs) {
             console.debug(`found unplain name ${rawName} as ${plainName} in gender lookup`);
             return firstNameMaleProbs[plainName];
@@ -288,7 +288,7 @@ const listingsHandler = (() => {
 
         try {
             const faceGender = await getGenderByPhoto(img);
-            if (!faceGender) return console.warn(`no faceapi gender result for ID ${id}`); 
+            if (!faceGender) return console.warn(`no faceapi gender result for ID ${id}`);
 
             console.debug(`face-api result for id ${id}: ${faceGender} male probability`);
             return photoGenderCache[id] = faceGender;
@@ -330,7 +330,7 @@ const listingsHandler = (() => {
         });
     }
 
-    const alreadyFilteredCache = new Set([]); 
+    const alreadyFilteredCache = new Set([]);
     let filterProfilesExecution = Promise.resolve();
     async function filterProfiles() { filterProfilesExecution = (async () => {
         await filterProfilesExecution;
