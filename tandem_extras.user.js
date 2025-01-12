@@ -8,6 +8,7 @@
 // @grant       GM.setValue
 // @grant       GM.getValue
 // @grant       GM.xmlHttpRequest
+// @grant       GM.notification
 // @top-level-await
 // ==/UserScript==
 
@@ -335,41 +336,52 @@ const listingsHandler = (() => {
     async function filterProfiles() { filterProfilesExecution = (async () => {
         await filterProfilesExecution;
         console.log('filterProfiles executing');
+        try {
+            const blocklist = new Set(await GM.getValue(PROFILE_BLOCKLIST, []));
+            const chattedCache = new Set(await GM.getValue(CHATTED_CACHE, []));
+            const photoGenderCache = await GM.getValue(PHOTO_GENDER_CACHE_KEY, {});
 
-        const blocklist = new Set(await GM.getValue(PROFILE_BLOCKLIST, []));
-        const chattedCache = new Set(await GM.getValue(CHATTED_CACHE, []));
-        const photoGenderCache = await GM.getValue(PHOTO_GENDER_CACHE_KEY, {});
+            const idToPHash = await GM.getValue(ID_TO_PHASH, {});
+            const pHashToId = await GM.getValue(PHASH_TO_ID, {});
 
-        const idToPHash = await GM.getValue(ID_TO_PHASH, {});
-        const pHashToId = await GM.getValue(PHASH_TO_ID, {});
+            await Promise.all([...document.querySelectorAll(
+                    '.styles_thumbnail__cFAy3'+
+                    ':not(.styles_skeleton__J2O6m)' +
+                    ':not([style*="display: none"])'
+                )].map(async (el) => {
+                    try {
+                        const id = el.id;
+                        const {src: imgSrc , alt: name} = el.querySelector('div img');
+                        if (!id || !imgSrc || !name) return console.error(`bad regular-profile element; id: ${id}, name: ${name}, imgSrc: ${imgSrc}`, el);
 
-        await Promise.all([...document.querySelectorAll(
-                '.styles_thumbnail__cFAy3'+
-                ':not(.styles_skeleton__J2O6m)' +
-                ':not([style*="display: none"])'
-            )].map(async (el) => {
-                const id = el.id;
-                const {src: imgSrc , alt: name} = el.querySelector('div img');
-                if (!id || !imgSrc || !name) return console.error(`bad regular-profile element; id: ${id}, name: ${name}, imgSrc: ${imgSrc}`, el);
+                        if (alreadyFilteredCache.has(id) || !alreadyFilteredCache.add(id)) return;
 
-                if (alreadyFilteredCache.has(id) || !alreadyFilteredCache.add(id)) return;
+                        let img;
+                        if (!(id in idToPHash)) await savePhotoHashToId(id, img = await loadImage(imgSrc), pHashToId, idToPHash);
 
-                let img;
-                if (!(id in idToPHash)) await savePhotoHashToId(id, img = await loadImage(imgSrc), pHashToId, idToPHash);
+                        Object.assign(el.style, (blocklist.has(id) || chattedCache.has(id))
+                            ? { display: 'none' }
+                            : getStyleForGender(
+                                getGenderByName(name),
+                                await getGenderByPhotoAndCache(img || await loadImage(imgSrc), id, photoGenderCache)
+                            )
+                        );
+                    } catch (err) { throw new Error(`filterProfiles error for ${el.id}`, err); }
+                })
+            );
 
-                Object.assign(el.style, (blocklist.has(id) || chattedCache.has(id))
-                    ? { display: 'none' }
-                    : getStyleForGender(
-                        getGenderByName(name),
-                        await getGenderByPhotoAndCache(img || await loadImage(imgSrc), id, photoGenderCache)
-                    )
-                );
-            })
-        );
-
-        GM.setValue(PHOTO_GENDER_CACHE_KEY, photoGenderCache);
-        GM.setValue(ID_TO_PHASH, idToPHash);
-        GM.setValue(PHASH_TO_ID, pHashToId);
+            GM.setValue(PHOTO_GENDER_CACHE_KEY, photoGenderCache);
+            GM.setValue(ID_TO_PHASH, idToPHash);
+            GM.setValue(PHASH_TO_ID, pHashToId);
+        } catch (err) {
+            console.error('filterProfiles error',err);
+            GM.notification({
+                title: 'Filter profiles error',
+                text: err.message || 'filter profiles errored...',
+                timeout: 10000,
+                onclick: () => console.log('errornotif clicked')
+            });
+        }
     })();}
 
     let faceapiModelsLoading = false;
