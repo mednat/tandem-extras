@@ -127,7 +127,7 @@ const chatsHandler = (() => {
         document.addEventListener('keydown', onChatKeydown);
 
         unsafeWindow.deleteChatsWithString = async (s) => {
-            for (let chat of document.querySelectorAll('.styles_InfiniteScrollContainer__rYqKF li.styles_Conversation__IoGWS')) {
+            for (const chat of document.querySelectorAll('.styles_InfiniteScrollContainer__rYqKF li.styles_Conversation__IoGWS')) {
                 if (chat.querySelector('.styles_conversationPreview__qsCW9 p')?.textContent.includes(s)) await deleteChat(chat);
             }
         };
