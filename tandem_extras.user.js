@@ -1,6 +1,7 @@
 // ==UserScript==
-// @name        Tandem extras
-// @description filter profiles by 1) gender (name/photo) 2) manual blocklist 3) already-chatted; kbd shortcuts
+// @name        Tandem Enhancement Suite
+// @description filter profiles by 1) gender (name/photo) 2) manual blocklist 3) already-chatted; various kbd shortcuts
+// @license     MIT
 // @match       *://app.tandem.net/*
 // @require     https://unpkg.com/imagehash-web/dist/imagehash-web.min.js
 // @require     https://cdn.jsdelivr.net/npm/face-api.js/dist/face-api.min.js
