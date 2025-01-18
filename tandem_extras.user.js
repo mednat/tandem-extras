@@ -284,37 +284,54 @@ const listingsHandler = (() => {
 
     async function filterHighlightedProfiles() {
         console.log('filtering highlighted profiles...');
-        const pHashToId = await GM.getValue(PHASH_TO_ID, {});
-        const blocklist = new Set(await GM.getValue(PROFILE_BLOCKLIST, []));
-        const chattedCache = new Set(await GM.getValue(CHATTED_CACHE, []));
-        const photoGenderCache = await GM.getValue(PHOTO_GENDER_CACHE_KEY, {});
+        try {
+            const pHashToId = await GM.getValue(PHASH_TO_ID, {});
+            const blocklist = new Set(await GM.getValue(PROFILE_BLOCKLIST, []));
+            const chattedCache = new Set(await GM.getValue(CHATTED_CACHE, []));
+            const photoGenderCache = await GM.getValue(PHOTO_GENDER_CACHE_KEY, {});
 
-        document.querySelectorAll('.styles_HighlightedProfile__fRL2W:not([style*="display: none"])').forEach(async (el) => {
-            const {src: imgSrc , alt: name} = el.querySelector('div img');
-            if (!imgSrc || !name) return console.error(`bad highlighted-profile element; name: ${name}, imgSrc: ${imgSrc}`, el);
+            await Promise.all([...document.querySelectorAll(
+                    '.styles_HighlightedProfile__fRL2W'+
+                    ':not([style*="display: none"])'
+                )].map(async (el) => {
+                    const {src: imgSrc , alt: name} = el.querySelector('div img');
+                    if (!imgSrc || !name) return console.error(`bad highlighted-profile element; name: ${name}, imgSrc: ${imgSrc}`, el);
+                    try {
+                        const img = await loadImage(imgSrc);
 
-            const img = await loadImage(imgSrc);
+                        let hash;
+                        try {
+                            hash = (await phash(img)).toHexString();
+                            console.debug(`(from listing) name: ${name}; hash: ${hash}`);
+                        } catch (err) { console.error(`failure getting image hash for highlighted profile, name: ${name}`, err); }
 
-            let hash;
-            try {
-                hash = (await phash(img)).toHexString();
-                console.debug(`(from listing) name: ${name}; hash: ${hash}`);
-            } catch (err) { console.error(`failure getting image hash for highlighted profile, name: ${name}`, err); }
+                        let faceGender;
+                        if (hash in pHashToId) {
+                            const id = pHashToId[hash];
+                            console.debug(`hash ${hash} has id ${id}`);
 
-            let faceGender;
-            if (hash in pHashToId) {
-                const id = pHashToId[hash];
-                console.debug(`hash ${hash} has id ${id}`);
+                            if (blocklist.has(id) || chattedCache.has(id)) {
+                                console.debug(`found id ${id} with hash ${hash} in blocklist or chattedCache, hiding highlighted profile...`);
+                                return el.style.display = 'none';
+                            }
+                            faceGender = await getGenderByPhotoAndCache(img, id, photoGenderCache);
+                        } else { faceGender = await getGenderByPhoto(img); }
 
-                if (blocklist.has(id) || chattedCache.has(id)) {
-                    console.debug(`found id ${id} with hash ${hash} in blocklist or chattedCache, hiding highlighted profile...`);
-                    return el.style.display = 'none';
-                }
-                faceGender = await getGenderByPhotoAndCache(img, id, photoGenderCache);
-            } else { faceGender = await getGenderByPhoto(img); }
+                        Object.assign(el.style, getStyleForGender(getGenderByName(name), faceGender));
+                    } catch (err) { throw new Error(`filterHighlightedProfiles error for ${name}`, err); }
+                })
+            );
 
-            Object.assign(el.style, getStyleForGender(getGenderByName(name), faceGender));
-        });
+            GM.setValue(PHOTO_GENDER_CACHE_KEY, photoGenderCache);
+        } catch (err) {
+            console.error('filterHighlightedProfiles error',err);
+            GM.notification({
+                title: 'Filter highlighted profiles error',
+                text: err.message || 'filter highlighted profiles errored...',
+                timeout: 10000,
+                onclick: () => console.log('errornotif clicked')
+            });
+        }
     }
 
     const alreadyFilteredCache = new Set([]);
