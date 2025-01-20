@@ -24,6 +24,8 @@ const PHOTO_GENDER_CACHE_KEY = 'photoGenderCache';
 const PHASH_TO_ID = 'pHashToId';
 const ID_TO_PHASH = 'idToPHash';
 
+unsafeWindow.getFirstNameMaleProb = (firstName) => firstNameMaleProbs[firstName];
+
 unsafeWindow.checkBadCacheVals = async () => {
     [PROFILE_BLOCKLIST, CHATTED_CACHE].forEach(async (gmKey) => {
         if ((await GM.getValue(gmKey, [])).some(x => !x)) console.error(`falsy in ${gmKey}`);
