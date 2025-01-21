@@ -111,15 +111,21 @@ const chatsHandler = (() => {
         } catch (error) { console.error('Error during UI-based blocking:', error); }
     }
 
+    function deleteActiveChat() {
+        const chats = [...document.querySelectorAll('.styles_conversationLink__w7AZy')];
+        const activeChatIndex = chats.findIndex(c => c.classList.contains('styles_active__zmQpO'));
+        if (activeChatIndex === -1) return;
+
+        deleteChat(chats[activeChatIndex].closest('.styles_Conversation__IoGWS'));
+        chats[(activeChatIndex + 1)]?.click();
+    }
+
     function onChatKeydown(e) {
         if (e.target.tagName === 'TEXTAREA') return;
         ({
             'j': () => navigateChats(1), //down
             'k': () => navigateChats(-1), //up
-            'D': () => handleDoubleKeypress('D', () => {
-                const activeChat = document.querySelector('.styles_active__zmQpO');
-                if (activeChat) deleteChat(activeChat.closest('.styles_Conversation__IoGWS'));
-            }),
+            'D': () => handleDoubleKeypress('D', deleteActiveChat),
             'B': () => handleDoubleKeypress('B', blockUserFromChat),
         }[e.key]?.());
     }
