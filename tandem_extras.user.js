@@ -111,22 +111,37 @@ const chatsHandler = (() => {
         } catch (error) { console.error('Error during UI-based blocking:', error); }
     }
 
+    function deleteActiveChat() {
+        if (!currentlySelectedChatId) return;
+        const chatToDelete = document.getElementById('conversation_'+currentlySelectedChatId)
+        chatToSelectAfterDeleteId = chatToDelete.nextElementSibling?.id || chatToDelete.previousElementSibling?.id;
+        deleteChat(chatToDelete);
+    }
+
     function onChatKeydown(e) {
         if (e.target.tagName === 'TEXTAREA') return;
         ({
             'j': () => navigateChats(1), //down
             'k': () => navigateChats(-1), //up
-            'D': () => handleDoubleKeypress('D', () => {
-                const activeChat = document.querySelector('.styles_active__zmQpO');
-                if (activeChat) deleteChat(activeChat.closest('.styles_Conversation__IoGWS'));
-            }),
+            'D': () => handleDoubleKeypress('D', deleteActiveChat),
             'B': () => handleDoubleKeypress('B', blockUserFromChat),
         }[e.key]?.());
     }
 
+    let currentlySelectedChatId;
+    let chatToSelectAfterDeleteId;
     const toCacheAsChatted = new Set();
     async function visit(profileId, isChatsAlready = false) {
+        if (chatToSelectAfterDeleteId) {
+            const chatToSelect = document.getElementById(chatToSelectAfterDeleteId)?.querySelector('a');
+            chatToSelectAfterDeleteId = null;
+            return chatToSelect?.click();
+        }
+        if (profileId === 'chats') return document.querySelector('.styles_conversationLink__w7AZy')?.click();
+
         if (!isChatsAlready) document.addEventListener('keydown', onChatKeydown);
+
+        currentlySelectedChatId = profileId;
 
         toCacheAsChatted.add(profileId);
 
@@ -136,6 +151,7 @@ const chatsHandler = (() => {
 
     async function cleanup() {
         document.removeEventListener('keydown', onChatKeydown);
+
         const chattedCache = await GM.getValue(CHATTED_CACHE, []);
         GM.setValue(CHATTED_CACHE, [...new Set([...chattedCache, ...toCacheAsChatted])]);
         toCacheAsChatted.clear();
