@@ -94,6 +94,12 @@ const chatsHandler = (() => {
         (await waitForElement('button.styles_button__td6Xf.styles_warning__QmUuQ')).click();
     }
 
+    unsafeWindow.deleteChatsWithString = async (s) => {
+        for (const chat of document.querySelectorAll('.styles_InfiniteScrollContainer__rYqKF li.styles_Conversation__IoGWS')) {
+            if (chat.querySelector('.styles_conversationPreview__qsCW9 p')?.textContent.includes(s)) await deleteChat(chat);
+        }
+    };
+
     async function blockUserFromChat() {
         console.log('Blocking user from chat page...');
         if (!document.querySelector('.styles_active__zmQpO')) return; // no chat is selected
@@ -126,12 +132,6 @@ const chatsHandler = (() => {
         }
 
         document.addEventListener('keydown', onChatKeydown);
-
-        unsafeWindow.deleteChatsWithString = async (s) => {
-            for (const chat of document.querySelectorAll('.styles_InfiniteScrollContainer__rYqKF li.styles_Conversation__IoGWS')) {
-                if (chat.querySelector('.styles_conversationPreview__qsCW9 p')?.textContent.includes(s)) await deleteChat(chat);
-            }
-        };
 
         HTMLElement.prototype.focus = () => {}; // Disable auto-focus chat input to allow for kbd-navigate chatlist
     }
