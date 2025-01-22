@@ -436,16 +436,11 @@ const listingsHandler = (() => {
 })();
 
 async function handlePathChange(fromPath, newPath) {
-    if (fromPath === newPath) return GM.notification({ // FIXME: remove once unnecessary
-        title: 'handlePathChange error',
-        text: 'fromPath and newPath are the same!',
-        timeout: 10000,
-        onclick: () => console.log('errornotif clicked')
-    });
-    console.log(`path change from ${fromPath} to ${newPath}`);
+    if (fromPath === newPath) return console.error(`fromPath and newPath are the same: ${fromPath}`);
+    console.log(`path is ${newPath}`);
 
     const pathToHandler = (path) => {
-        if (path === '/' || path === '/community') return listingsHandler;
+        if (path === '/' || path === '/en' || path === '/community') return listingsHandler;
         if (path.includes('/community')) return profileHandler;
         if (path.includes('/chats')) return chatsHandler;
     };
