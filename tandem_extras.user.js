@@ -124,19 +124,20 @@ const chatsHandler = (() => {
         }[e.key]?.());
     }
 
-    async function visit(path) {
+    async function visit(path, isChatsAlready = false) {
         if (!path.endsWith('/chats')){
             const chattedCache = new Set(await GM.getValue(CHATTED_CACHE, []));
             chattedCache.add(path.split('/').pop());
             GM.setValue(CHATTED_CACHE, [...chattedCache]);
         }
 
-        document.addEventListener('keydown', onChatKeydown);
+        if (!isChatsAlready) document.addEventListener('keydown', onChatKeydown);
 
+        //FIXME: see claude convo 'handling focus override in spa chat component'
         HTMLElement.prototype.focus = () => {}; // Disable auto-focus chat input to allow for kbd-navigate chatlist
     }
 
-    function cleanup () { document.removeEventListener('keydown', onChatKeydown); }
+    function cleanup() { document.removeEventListener('keydown', onChatKeydown); }
 
     return { visit, cleanup };
 })();
@@ -226,7 +227,7 @@ const profileHandler = (() => {
         } else console.debug(`already have ${profileId} hash: ${idToPHash[profileId]}`);
     }
 
-    function cleanup () {
+    function cleanup() {
         document.removeEventListener('keydown', onProfileKeydown);
         document.querySelectorAll('.custom-notification')?.forEach(el => el.remove());
     }
@@ -423,7 +424,7 @@ const listingsHandler = (() => {
         waitForListings.observe(document.body, { childList: true, subtree: true });
     }
 
-    function cleanup () {
+    function cleanup() {
         profileListingsObserver.disconnect();
         filterProfilesExecution = Promise.resolve();
         alreadyFilteredCache.clear();
@@ -432,17 +433,33 @@ const listingsHandler = (() => {
     return { visit, cleanup };
 })();
 
-function handlePath(path) {
-    console.log("path is now:", path);
-    [profileHandler, chatsHandler, listingsHandler].forEach(handler => handler.cleanup());
+function handlePathChange(fromPath, newPath) {
+    console.log(`path change from ${fromPath} to ${newPath}`);
 
-    if (path === '/' || path === '/community') return listingsHandler.visit();
-    if (path.includes('/community')) return profileHandler.visit(path.split('/').pop());
-    if (path.includes('/chats')) return chatsHandler.visit(path);
+    const pathToHandler = (path) => {
+        if (path === '/' || path === '/community') return listingsHandler;
+        if (path.includes('/community')) return profileHandler;
+        if (path.includes('/chats')) return chatsHandler;
+    };
+    const fromHandler = pathToHandler(fromPath);
+    const newHandler = pathToHandler(newPath);
+
+    if (newHandler === chatsHandler) {
+        const comingFromChat = fromHandler === chatsHandler;
+        if (!comingFromChat) fromHandler?.cleanup();
+        return chatsHandler.visit(newPath, comingFromChat);
+    }
+
+    fromHandler?.cleanup();
+    if (newHandler === listingsHandler) return listingsHandler.visit();
+    if (newHandler === profileHandler) return profileHandler.visit(newPath.split('/').pop());
 }
 
 if (window.scriptInitialized) return; // in case of multiple script injections
 window.scriptInitialized = true;
 
-navigation.addEventListener('navigate', (event) => handlePath(new URL(event.destination.url).pathname));
-handlePath(location.pathname);
+navigation.addEventListener('navigate', (event) => handlePathChange(
+    new URL(navigation.currentEntry.url).pathname,
+    new URL(event.destination.url).pathname
+));
+handlePathChange('/dummy', location.pathname);
