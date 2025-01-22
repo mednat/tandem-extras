@@ -311,6 +311,25 @@ const listingsHandler = (() => {
         } catch (err) { console.error(`error getting face gender for id ${id}`, err); }
     }
 
+    const unhiddenProfiles = new Set();
+    function toggleHiddenProfiles() {
+        if (unhiddenProfiles.size) {
+            console.debug('re-hiding profiles...');
+            unhiddenProfiles.forEach(id => document.getElementById(id).style.display = 'none');
+            return unhiddenProfiles.clear();
+        }
+
+        console.debug('unhiding profiles...');
+        document.querySelectorAll('.styles_thumbnail__cFAy3').forEach(el => {
+            if (el.style.display === 'none') {
+                unhiddenProfiles.add(el.id);
+                el.style.display = '';
+                el.style.backgroundColor = 'rgba(172, 146, 87, 0.65)';
+            }
+        });
+    }
+    unsafeWindow.toggleHiddenProfiles = toggleHiddenProfiles;
+
     async function filterHighlightedProfiles() {
         console.log('filtering highlighted profiles...');
         try {
