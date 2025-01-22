@@ -124,10 +124,10 @@ const chatsHandler = (() => {
         }[e.key]?.());
     }
 
-    async function visit(path, isChatsAlready = false) {
-        if (!path.endsWith('/chats')){
+    async function visit(profileId, isChatsAlready = false) {
+        if (profileId !== 'chats') {
             const chattedCache = new Set(await GM.getValue(CHATTED_CACHE, []));
-            chattedCache.add(path.split('/').pop());
+            chattedCache.add(profileId);
             GM.setValue(CHATTED_CACHE, [...chattedCache]);
         }
 
@@ -447,7 +447,7 @@ function handlePathChange(fromPath, newPath) {
     if (newHandler === chatsHandler) {
         const comingFromChat = fromHandler === chatsHandler;
         if (!comingFromChat) fromHandler?.cleanup();
-        return chatsHandler.visit(newPath, comingFromChat);
+        return chatsHandler.visit(newPath.split('/').pop(), comingFromChat);
     }
 
     fromHandler?.cleanup();
