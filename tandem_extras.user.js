@@ -112,12 +112,10 @@ const chatsHandler = (() => {
     }
 
     function deleteActiveChat() {
-        const chats = [...document.querySelectorAll('.styles_conversationLink__w7AZy')];
-        const activeChatIndex = chats.findIndex(c => c.classList.contains('styles_active__zmQpO'));
-        if (activeChatIndex === -1) return;
-
-        deleteChat(chats[activeChatIndex].closest('.styles_Conversation__IoGWS'));
-        chats[(activeChatIndex + 1)]?.click();
+        if (!currentlySelectedChatId) return;
+        const chatToDelete = document.getElementById('conversation_'+currentlySelectedChatId)
+        chatToSelectAfterDeleteId = chatToDelete.nextElementSibling?.id || chatToDelete.previousElementSibling?.id;
+        deleteChat(chatToDelete);
     }
 
     function onChatKeydown(e) {
@@ -130,9 +128,20 @@ const chatsHandler = (() => {
         }[e.key]?.());
     }
 
+    let currentlySelectedChatId;
+    let chatToSelectAfterDeleteId;
     const toCacheAsChatted = new Set();
     async function visit(profileId, isChatsAlready = false) {
+        if (chatToSelectAfterDeleteId) {
+            const chatToSelect = document.getElementById(chatToSelectAfterDeleteId)?.querySelector('a');
+            chatToSelectAfterDeleteId = null;
+            return chatToSelect?.click();
+        }
+        if (profileId === 'chats') return document.querySelector('.styles_conversationLink__w7AZy')?.click();
+
         if (!isChatsAlready) document.addEventListener('keydown', onChatKeydown);
+
+        currentlySelectedChatId = profileId;
 
         toCacheAsChatted.add(profileId);
 
@@ -142,6 +151,7 @@ const chatsHandler = (() => {
 
     async function cleanup() {
         document.removeEventListener('keydown', onChatKeydown);
+
         const chattedCache = await GM.getValue(CHATTED_CACHE, []);
         GM.setValue(CHATTED_CACHE, [...new Set([...chattedCache, ...toCacheAsChatted])]);
         toCacheAsChatted.clear();
