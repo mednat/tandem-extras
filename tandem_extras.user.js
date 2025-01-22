@@ -434,6 +434,12 @@ const listingsHandler = (() => {
 })();
 
 function handlePathChange(fromPath, newPath) {
+    if (fromPath === newPath) return GM.notification({
+        title: 'handlePathChange error',
+        text: 'fromPath and newPath are the same!',
+        timeout: 10000,
+        onclick: () => console.log('errornotif clicked')
+    });
     console.log(`path change from ${fromPath} to ${newPath}`);
 
     const pathToHandler = (path) => {
