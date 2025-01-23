@@ -87,6 +87,17 @@ const chatsHandler = (() => {
         chats[(direction + chats.findIndex(c => c.classList.contains('styles_active__zmQpO')))]?.click();
     }
 
+    async function blockUserFromChat() {
+        console.log('Blocking user from chat page...');
+        if (!document.querySelector('.styles_active__zmQpO')) return; // no chat is selected
+        try {
+            const moreOptionsButton = document.querySelector('button[data-popover="moreOptionsPopover"]');
+            moreOptionsButton.click();
+            (await waitForElement('i[name="block"]', moreOptionsButton)).click();
+            (await waitForElement('button.styles_button__td6Xf.styles_warning__QmUuQ')).click();
+        } catch (error) { console.error('Error during UI-based blocking:', error); }
+    }
+
     async function deleteChat(chat) {
         const deleteButton = chat.querySelector('button.styles_DeleteButton__R18h8');
         deleteButton.click();
@@ -99,22 +110,13 @@ const chatsHandler = (() => {
             if (chat.querySelector('.styles_conversationPreview__qsCW9 p')?.textContent.includes(s)) await deleteChat(chat);
         }
     };
-
-    async function blockUserFromChat() {
-        console.log('Blocking user from chat page...');
-        if (!document.querySelector('.styles_active__zmQpO')) return; // no chat is selected
-        try {
-            const moreOptionsButton = document.querySelector('button[data-popover="moreOptionsPopover"]');
-            moreOptionsButton.click();
-            (await waitForElement('i[name="block"]', moreOptionsButton)).click();
-            (await waitForElement('button.styles_button__td6Xf.styles_warning__QmUuQ')).click();
-        } catch (error) { console.error('Error during UI-based blocking:', error); }
-    }
-
     function deleteActiveChat() {
-        if (!currentlySelectedChatId) return;
-        const chatToDelete = document.getElementById('conversation_'+currentlySelectedChatId)
-        chatToSelectAfterDeleteId = chatToDelete.nextElementSibling?.id || chatToDelete.previousElementSibling?.id;
+        const profileId = location.pathname.split('/').pop();
+        if (!profileId) return console.error('no profileId found in chat path');
+        if (profileId === 'chats') return console.error('no active chat selected');
+
+        const chatToDelete = document.getElementById('conversation_'+profileId)
+        chatIdToSelect = chatToDelete.nextElementSibling?.id || chatToDelete.previousElementSibling?.id;
         deleteChat(chatToDelete);
     }
 
@@ -128,34 +130,27 @@ const chatsHandler = (() => {
         }[e.key]?.());
     }
 
-    let currentlySelectedChatId;
-    let chatToSelectAfterDeleteId;
-    const toCacheAsChatted = new Set();
-    async function visit(profileId, isChatsAlready = false) {
-        if (chatToSelectAfterDeleteId) {
-            const chatToSelect = document.getElementById(chatToSelectAfterDeleteId)?.querySelector('a');
-            chatToSelectAfterDeleteId = null;
+    let chatIdToSelect;
+    let chattedCache;
+    async function visit(profileId) {
+        if (chatIdToSelect) {
+            const chatToSelect = document.getElementById(chatIdToSelect)?.querySelector('a');
+            chatIdToSelect = null;
             return chatToSelect?.click();
         }
-        if (profileId === 'chats') return document.querySelector('.styles_conversationLink__w7AZy')?.click();
 
-        if (!isChatsAlready) document.addEventListener('keydown', onChatKeydown);
-
-        currentlySelectedChatId = profileId;
-
-        toCacheAsChatted.add(profileId);
-
-        //FIXME: see claude convo 'handling focus override in spa chat component'
+        document.addEventListener('keydown', onChatKeydown);
         HTMLElement.prototype.focus = () => {}; // Disable auto-focus chat input to allow for kbd-navigate chatlist
+
+        chattedCache = chattedCache || new Set(await GM.getValue(CHATTED_CACHE, [])); // don't keep reloading when navigating chatlist
+        if (!chattedCache.has(profileId)) {
+            console.debug(`saving ${profileId} to chattedCache...`);
+            chattedCache = new Set(await GM.getValue(CHATTED_CACHE, [])); // handle multiple tabs
+            GM.setValue(CHATTED_CACHE, [...chattedCache.add(profileId)]);
+        }
     }
 
-    async function cleanup() {
-        document.removeEventListener('keydown', onChatKeydown);
-
-        const chattedCache = await GM.getValue(CHATTED_CACHE, []);
-        GM.setValue(CHATTED_CACHE, [...new Set([...chattedCache, ...toCacheAsChatted])]);
-        toCacheAsChatted.clear();
-    }
+    function cleanup() { document.removeEventListener('keydown', onChatKeydown); }
 
     return { visit, cleanup };
 })();
@@ -470,36 +465,19 @@ const listingsHandler = (() => {
     return { visit, cleanup };
 })();
 
-const getHandlerFromPath = (path) => {
-    if (path === '/' || path === '/en' || path === '/community') return listingsHandler;
-    if (path.includes('/community')) return profileHandler;
-    if (path.includes('/chats')) return chatsHandler;
-};
-
-async function handlePathChange(fromPath, newPath) {
-    if (fromPath === newPath) return console.error(`fromPath and newPath are the same: ${fromPath}`);
-    console.log(`path is now ${newPath}`);
-
-    const fromHandler = getHandlerFromPath(fromPath);
-    const newHandler = getHandlerFromPath(newPath);
-    const profileId = newPath.split('/').pop();
-
-    if (fromHandler === chatsHandler && newHandler === chatsHandler) return chatsHandler.visit(profileId, true);
-
-    await fromHandler?.cleanup();
-    newHandler.visit(profileId);
-}
-
 if (window.scriptInitialized) return; // in case of multiple script injections
 window.scriptInitialized = true;
 
-window.addEventListener('beforeunload', () => getHandlerFromPath(location.pathname).cleanup());
+function handlePathChange(path) {
+    console.log(`path is ${path}`);
 
-navigation.addEventListener('navigate', (event) => handlePathChange(
-    new URL(navigation.currentEntry.url).pathname,
-    new URL(event.destination.url).pathname
-));
+    [listingsHandler, profileHandler, chatsHandler].forEach(h => h.cleanup());
 
-const path = location.pathname;
-console.log(`path is ${path}`);
-getHandlerFromPath(path).visit(path.split('/').pop());
+    if (path.includes('/chats')) return chatsHandler.visit(path.split('/').pop());
+    if (path === '/' || path === '/en' || path === '/community') return listingsHandler.visit();
+    if (path.includes('/community')) return profileHandler.visit(path.split('/').pop());
+}
+
+navigation.addEventListener('navigate', (event) => handlePathChange(new URL(event.destination.url).pathname));
+
+handlePathChange(location.pathname);
