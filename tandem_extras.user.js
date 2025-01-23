@@ -158,8 +158,8 @@ const chatsHandler = (() => {
 const profileHandler = (() => {
     function navigateSlideshow(direction) {
         const slidesDiv = document.querySelector('.styles_slides___NkWa');
-        if (slidesDiv) (slidesDiv.querySelector(`i[name="arrow_${direction}"]`))?.click();
-        else document.querySelector('img.styles_profilePicture__XAMpQ')?.click();
+        if (!slidesDiv) return document.querySelector('img.styles_profilePicture__XAMpQ')?.click(); // open slideshow
+        (slidesDiv.querySelector(`i[name="arrow_${direction}"]`))?.click();
     }
 
     function createAlertBanner(textContent, backgroundColor) {
@@ -186,17 +186,13 @@ const profileHandler = (() => {
         const profileId = location.pathname.split('/').pop();
         console.debug('profile ID to toggle blocklist is: ', profileId);
 
-        if (blocklist.delete(profileId)) {
-            await GM.setValue(PROFILE_BLOCKLIST, [...blocklist]);
-            createAlertBanner(`Profile ${profileId} removed from blocklist.`, 'rgb(55, 255, 142)');
-        } else {
-            await GM.setValue(PROFILE_BLOCKLIST, [...blocklist.add(profileId)]);
-            createAlertBanner(`Profile ${profileId} added to blocklist.`, 'rgb(255, 55, 112)');
-        }
+        const deleted = blocklist.delete(profileId);
+        await GM.setValue(PROFILE_BLOCKLIST, [...(deleted ? blocklist : blocklist.add(profileId))]);
+        createAlertBanner(`Profile ${profileId} ${deleted ? 'removed from' : 'added to'} blocklist.`, deleted ? 'rgb(55, 255, 142)' : 'rgb(255, 55, 112)');
     }
 
-    async function blockUserFromProfile() {
-        console.log('Blocking user from profile page...');
+    async function toggleBlockUserFromProfile() {
+        console.log('toggling Tandem-block user from profile page...');
         try {
             const moreOptionsButton = document.querySelector('[data-popover="moreOptionsPopover"]');
             moreOptionsButton.click();
@@ -205,10 +201,10 @@ const profileHandler = (() => {
             const isBlocked = blockButton.textContent.includes('Unblock');
             blockButton.click();
 
-            if (!isBlocked) {
-                (await waitForElement('.styles_button__td6Xf.styles_warning__QmUuQ')).click();
-                createAlertBanner(`blocked on Tandem!`, 'rgb(255, 55, 55)');
-            } else createAlertBanner(`unblocked on Tandem!`, 'rgb(55, 255, 55)');
+            if(isBlocked) return createAlertBanner(`unblocked on Tandem!`, 'rgb(55, 255, 55)'); 
+
+            (await waitForElement('.styles_button__td6Xf.styles_warning__QmUuQ')).click();
+            createAlertBanner(`blocked on Tandem!`, 'rgb(255, 55, 55)');
         } catch (error) { console.error('Error during UI-based blocking:', error); }
     }
 
@@ -218,26 +214,27 @@ const profileHandler = (() => {
             'ArrowRight': () => navigateSlideshow('forward'),
             'Escape': () => document.querySelector('.styles_outsideContent__B7e2g')?.click(), // exit slideshow
             'b': () => handleDoubleKeypress('b', toggleProfileBlocklist),
-            'B': () => handleDoubleKeypress('B', blockUserFromProfile),
+            'B': () => handleDoubleKeypress('B', toggleBlockUserFromProfile),
         }[e.key]?.());
     }
 
-    async function visit(profileId) {
+    async function visit(id) {
         document.addEventListener('keydown', onProfileKeydown);
 
         // associate profile photo hash with id
         const idToPHash = await GM.getValue(ID_TO_PHASH, {});
-        if (!(profileId in idToPHash)) {
-            const pHashToId = await GM.getValue(PHASH_TO_ID, {});
-            const imgSrc = (await waitForElement('img.styles_profilePicture__XAMpQ')).src;
-            console.debug(`got imgSrc: ${imgSrc}`);
 
-            const hash = await savePhotoHashToId(profileId, await loadImage(imgSrc), pHashToId, idToPHash);
+        if (id in idToPHash) return console.debug(`already have ${id} hash: ${idToPHash[id]}`);
 
-            GM.setValue(ID_TO_PHASH, idToPHash);
-            GM.setValue(PHASH_TO_ID, pHashToId);
-            console.debug(`saved ${profileId} <> hash: ${hash}`);
-        } else console.debug(`already have ${profileId} hash: ${idToPHash[profileId]}`);
+        const pHashToId = await GM.getValue(PHASH_TO_ID, {});
+        const imgSrc = (await waitForElement('img.styles_profilePicture__XAMpQ')).src;
+        console.debug(`got imgSrc: ${imgSrc}`);
+
+        const hash = await savePhotoHashToId(id, await loadImage(imgSrc), pHashToId, idToPHash);
+
+        GM.setValue(ID_TO_PHASH, idToPHash);
+        GM.setValue(PHASH_TO_ID, pHashToId);
+        console.debug(`saved ${id} <> hash: ${hash}`);
     }
 
     function cleanup() {
