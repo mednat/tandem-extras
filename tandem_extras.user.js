@@ -470,17 +470,18 @@ const listingsHandler = (() => {
     return { visit, cleanup };
 })();
 
+const getHandlerFromPath = (path) => {
+    if (path === '/' || path === '/en' || path === '/community') return listingsHandler;
+    if (path.includes('/community')) return profileHandler;
+    if (path.includes('/chats')) return chatsHandler;
+};
+
 async function handlePathChange(fromPath, newPath) {
     if (fromPath === newPath) return console.error(`fromPath and newPath are the same: ${fromPath}`);
-    console.log(`path is ${newPath}`);
+    console.log(`path is now ${newPath}`);
 
-    const pathToHandler = (path) => {
-        if (path === '/' || path === '/en' || path === '/community') return listingsHandler;
-        if (path.includes('/community')) return profileHandler;
-        if (path.includes('/chats')) return chatsHandler;
-    };
-    const fromHandler = pathToHandler(fromPath);
-    const newHandler = pathToHandler(newPath);
+    const fromHandler = getHandlerFromPath(fromPath);
+    const newHandler = getHandlerFromPath(newPath);
     const profileId = newPath.split('/').pop();
 
     if (fromHandler === chatsHandler && newHandler === chatsHandler) return chatsHandler.visit(profileId, true);
@@ -492,8 +493,13 @@ async function handlePathChange(fromPath, newPath) {
 if (window.scriptInitialized) return; // in case of multiple script injections
 window.scriptInitialized = true;
 
+window.addEventListener('beforeunload', () => getHandlerFromPath(location.pathname).cleanup());
+
 navigation.addEventListener('navigate', (event) => handlePathChange(
     new URL(navigation.currentEntry.url).pathname,
     new URL(event.destination.url).pathname
 ));
-handlePathChange('/dummy', location.pathname);
+
+const path = location.pathname;
+console.log(`path is ${path}`);
+getHandlerFromPath(path).visit(path.split('/').pop());
