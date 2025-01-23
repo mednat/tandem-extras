@@ -66,19 +66,19 @@ async function loadImage(url) {
     }));
 }
 
-async function savePhotoHashToId(profileId, img, pHashToId, idToPHash) {
+async function savePhotoHashToId(id, img, pHashToId, idToPHash) {
     try {
         const hash = (await phash(img)).toHexString();
-        if (hash in pHashToId) console.warn(pHashToId[hash] === profileId ?
-                `HASH SELF-COLLISION for ${hash}, id ${profileId}!` :
-                `HASH COLLISION for ${hash} between ${profileId} and ${pHashToId[hash]}! overwriting...`
+        if (hash in pHashToId) console.warn(pHashToId[hash] === id ?
+                `HASH SELF-COLLISION for ${hash}, id ${id}!` :
+                `HASH COLLISION for ${hash} between ${id} and ${pHashToId[hash]}! overwriting...`
             );
 
-        idToPHash[profileId] = hash;
-        pHashToId[hash] = profileId;
+        idToPHash[id] = hash;
+        pHashToId[hash] = id;
 
         return hash;
-    } catch (err) { console.log(`error getting/storing image hash for ${profileId} with url ${imgSrc}: `, err); }
+    } catch (err) { console.log(`error getting/storing image hash for ${id} with url ${imgSrc}: `, err); }
 }
 
 const chatsHandler = (() => {
@@ -111,11 +111,11 @@ const chatsHandler = (() => {
         }
     };
     function deleteActiveChat() {
-        const profileId = location.pathname.split('/').pop();
-        if (!profileId) return console.error('no profileId found in chat path');
-        if (profileId === 'chats') return console.error('no active chat selected');
+        const id = location.pathname.split('/').pop();
+        if (!id) return console.error('no profile id found in chat path');
+        if (id === 'chats') return console.error('no active chat selected');
 
-        const chatToDelete = document.getElementById('conversation_'+profileId)
+        const chatToDelete = document.getElementById('conversation_'+id)
         chatIdToSelect = chatToDelete.nextElementSibling?.id || chatToDelete.previousElementSibling?.id;
         deleteChat(chatToDelete);
     }
@@ -132,7 +132,7 @@ const chatsHandler = (() => {
 
     let chatIdToSelect;
     let chattedCache;
-    async function visit(profileId) {
+    async function visit(id) {
         if (chatIdToSelect) {
             const chatToSelect = document.getElementById(chatIdToSelect)?.querySelector('a');
             chatIdToSelect = null;
@@ -143,10 +143,10 @@ const chatsHandler = (() => {
         HTMLElement.prototype.focus = () => {}; // Disable auto-focus chat input to allow for kbd-navigate chatlist
 
         chattedCache = chattedCache || new Set(await GM.getValue(CHATTED_CACHE, [])); // don't keep reloading when navigating chatlist
-        if (!chattedCache.has(profileId)) {
-            console.debug(`saving ${profileId} to chattedCache...`);
+        if (!chattedCache.has(id)) {
+            console.debug(`saving ${id} to chattedCache...`);
             chattedCache = new Set(await GM.getValue(CHATTED_CACHE, [])); // handle multiple tabs
-            GM.setValue(CHATTED_CACHE, [...chattedCache.add(profileId)]);
+            GM.setValue(CHATTED_CACHE, [...chattedCache.add(id)]);
         }
     }
 
@@ -183,12 +183,12 @@ const profileHandler = (() => {
     async function toggleProfileBlocklist() {
         const blocklist = new Set(await GM.getValue(PROFILE_BLOCKLIST, []));
 
-        const profileId = location.pathname.split('/').pop();
-        console.debug('profile ID to toggle blocklist is: ', profileId);
+        const id = location.pathname.split('/').pop();
+        console.debug('profile ID to toggle blocklist is: ', id);
 
-        const deleted = blocklist.delete(profileId);
-        await GM.setValue(PROFILE_BLOCKLIST, [...(deleted ? blocklist : blocklist.add(profileId))]);
-        createAlertBanner(`Profile ${profileId} ${deleted ? 'removed from' : 'added to'} blocklist.`, deleted ? 'rgb(55, 255, 142)' : 'rgb(255, 55, 112)');
+        const deleted = blocklist.delete(id);
+        await GM.setValue(PROFILE_BLOCKLIST, [...(deleted ? blocklist : blocklist.add(id))]);
+        createAlertBanner(`Profile ${id} ${deleted ? 'removed from' : 'added to'} blocklist.`, deleted ? 'rgb(55, 255, 142)' : 'rgb(255, 55, 112)');
     }
 
     async function toggleBlockUserFromProfile() {
