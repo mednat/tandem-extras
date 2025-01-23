@@ -345,19 +345,17 @@ const listingsHandler = (() => {
                             console.debug(`(from listing) name: ${name}; hash: ${hash}`);
                         } catch (err) { console.error(`failure getting image hash for highlighted profile, name: ${name}`, err); }
 
-                        let faceGender;
-                        if (hash in pHashToId) {
-                            const id = pHashToId[hash];
-                            console.debug(`hash ${hash} has id ${id}`);
+                        if (!(hash in pHashToId)) return Object.assign(el.style, getStyleForGender(getGenderByName(name), await getGenderByPhoto(img)));
 
-                            if (blocklist.has(id) || chattedCache.has(id)) {
-                                console.debug(`found id ${id} with hash ${hash} in blocklist or chattedCache, hiding highlighted profile...`);
-                                return el.style.display = 'none';
-                            }
-                            faceGender = await getGenderByPhotoAndCache(img, id, photoGenderCache);
-                        } else { faceGender = await getGenderByPhoto(img); }
+                        const id = pHashToId[hash];
+                        console.debug(`hash ${hash} has id ${id}`);
 
-                        Object.assign(el.style, getStyleForGender(getGenderByName(name), faceGender));
+                        if (blocklist.has(id) || chattedCache.has(id)) {
+                            console.debug(`found id ${id} with hash ${hash} in blocklist or chattedCache, hiding highlighted profile...`);
+                            return el.style.display = 'none';
+                        }
+
+                        Object.assign(el.style, getStyleForGender(getGenderByName(name), await getGenderByPhotoAndCache(img, id, photoGenderCache)));
                     } catch (err) { throw new Error(`filterHighlightedProfiles error for ${name}`, err); }
                 })
             );
@@ -440,14 +438,14 @@ const listingsHandler = (() => {
         }
         if (!faceapi.nets.ssdMobilenetv1.isLoaded || !faceapi.nets.ageGenderNet.isLoaded) return;
 
-        const waitForListings = new MutationObserver(() => {
+        const waitForListings = new MutationObserver(async () => {
             const listingsGrid = document.querySelector('.styles_grid__YwDSM');
             const highlightedProfs = document.querySelector('.styles_track__ElDHy');
             if (listingsGrid && highlightedProfs) {
                 waitForListings.disconnect();
                 profileListingsObserver.observe(listingsGrid, { childList: true });
+                await filterHighlightedProfiles();
                 filterProfiles();
-                filterHighlightedProfiles();
             }
         });
         waitForListings.observe(document.body, { childList: true, subtree: true });
