@@ -304,7 +304,7 @@ const listingsHandler = (() => {
     }
 
     const unhiddenProfiles = new Set();
-    function toggleHiddenProfiles() {
+    unsafeWindow.toggleHiddenProfiles = () => {
         if (unhiddenProfiles.size) {
             console.debug('re-hiding profiles...');
             unhiddenProfiles.forEach(id => document.getElementById(id).style.display = 'none');
@@ -320,7 +320,6 @@ const listingsHandler = (() => {
             }
         });
     }
-    unsafeWindow.toggleHiddenProfiles = toggleHiddenProfiles;
 
     async function filterHighlightedProfiles() {
         console.log('filtering highlighted profiles...');
