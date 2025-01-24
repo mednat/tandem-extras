@@ -360,15 +360,7 @@ const listingsHandler = (() => {
             );
 
             GM.setValue(PHOTO_GENDER_CACHE_KEY, photoGenderCache);
-        } catch (err) {
-            console.error('filterHighlightedProfiles error',err);
-            GM.notification({
-                title: 'Filter highlighted profiles error',
-                text: err.message || 'filter highlighted profiles errored...',
-                timeout: 10000,
-                onclick: () => console.log('errornotif clicked')
-            });
-        }
+        } catch (err) { console.error('filterHighlightedProfiles error',err); }
     }
 
     const alreadyFilteredCache = new Set();
@@ -413,15 +405,7 @@ const listingsHandler = (() => {
             GM.setValue(PHOTO_GENDER_CACHE_KEY, photoGenderCache);
             GM.setValue(ID_TO_PHASH, idToPHash);
             GM.setValue(PHASH_TO_ID, pHashToId);
-        } catch (err) {
-            console.error('filterProfiles error',err);
-            GM.notification({
-                title: 'Filter profiles error',
-                text: err.message || 'filter profiles errored...',
-                timeout: 10000,
-                onclick: () => console.log('errornotif clicked')
-            });
-        }
+        } catch (err) { console.error('filterProfiles error',err); }
     })();}
 
     let faceapiModelsLoading = false;
