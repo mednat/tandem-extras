@@ -452,7 +452,9 @@ function handlePathChange(path) {
     [listingsHandler, profileHandler, chatsHandler].forEach(h => h.cleanup());
 
     if (path.includes('/chats')) return chatsHandler.visit(path.split('/').pop());
-    if (path === '/' || path === '/en' || path === '/community') return listingsHandler.visit();
+    if (path === '/' || path === '/en' || path === '/community') {
+        navigation.navigate('/chats');
+    }
     if (path.includes('/community')) return profileHandler.visit(path.split('/').pop());
 }
 
