@@ -355,7 +355,7 @@ const listingsHandler = (() => {
                         }
 
                         Object.assign(el.style, getStyleForGender(getGenderByName(name), await getGenderByPhotoAndCache(img, id, photoGenderCache)));
-                    } catch (err) { throw new Error(`filterHighlightedProfiles error for ${name}`, err); }
+                    } catch(err) { throw new Error(`filterHighlightedProfiles error for ${name}`, { cause: err }); }
                 })
             );
 
@@ -398,7 +398,7 @@ const listingsHandler = (() => {
                                 await getGenderByPhotoAndCache(img || await loadImage(imgSrc), id, photoGenderCache)
                             )
                         );
-                    } catch (err) { throw new Error(`filterProfiles error for ${el.id}`, err); }
+                    } catch (err) { throw new Error(`filterProfiles error for ${el.id}`, { cause: err }); }
                 })
             );
 
