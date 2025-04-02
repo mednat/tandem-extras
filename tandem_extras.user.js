@@ -376,6 +376,7 @@ const listingsHandler = (() => {
             const idToPHash = await GM.getValue(ID_TO_PHASH, {});
             const pHashToId = await GM.getValue(PHASH_TO_ID, {});
 
+            const errorIds = [];
             await Promise.all([...document.querySelectorAll(
                     '.styles_thumbnail__cFAy3'+
                     ':not(.styles_skeleton__J2O6m)' +
@@ -398,9 +399,11 @@ const listingsHandler = (() => {
                                 await getGenderByPhotoAndCache(img || await loadImage(imgSrc), id, photoGenderCache)
                             )
                         );
-                    } catch (err) { throw new Error(`filterProfiles error for ${el.id}`, { cause: err }); }
+                    } catch (err) { errorIds.push(el.id) && console.error(`filterProfiles error for ${el.id}`, err); }
                 })
             );
+            
+            if (errorIds.length > 5) throw new Error('too many failure ids');
 
             GM.setValue(PHOTO_GENDER_CACHE_KEY, photoGenderCache);
             GM.setValue(ID_TO_PHASH, idToPHash);
