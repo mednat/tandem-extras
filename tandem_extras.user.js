@@ -54,12 +54,20 @@ async function waitForElement(selector, documentScope = document.body, timeout =
 
 async function loadImage(url) {
     const img = new Image();
+    let rsp;
+    try {
+        rsp = (await GM.xmlHttpRequest({
+            method: 'GET',
+            url,
+            responseType: 'blob'
+        })).response;
+    } catch (err) {
+        console.error(`loadImage err for url ${url}`);
+        return Promise.reject(err);
+    }
+
     return new Promise(async (resolve, reject) => Object.assign(img, {
-        src: URL.createObjectURL((await GM.xmlHttpRequest({
-                method: 'GET',
-                url,
-                responseType: 'blob'
-            })).response),
+        src: URL.createObjectURL(rsp),
         crossOrigin: 'anonymous',
         onload: () => { URL.revokeObjectURL(img.src); resolve(img); },
         onerror: reject
@@ -293,6 +301,7 @@ const listingsHandler = (() => {
 
     async function getGenderByPhotoAndCache(img, id, photoGenderCache) {
         if (id in photoGenderCache) return photoGenderCache[id];
+        if (!img) return console.debug(`no img created for ${id}`);
 
         try {
             const faceGender = await getGenderByPhoto(img);
@@ -376,7 +385,6 @@ const listingsHandler = (() => {
             const idToPHash = await GM.getValue(ID_TO_PHASH, {});
             const pHashToId = await GM.getValue(PHASH_TO_ID, {});
 
-            const errorIds = [];
             await Promise.all([...document.querySelectorAll(
                     '.styles_thumbnail__cFAy3'+
                     ':not(.styles_skeleton__J2O6m)' +
@@ -390,21 +398,20 @@ const listingsHandler = (() => {
                         if (alreadyFilteredCache.has(id) || !alreadyFilteredCache.add(id)) return;
 
                         let img;
-                        if (!(id in idToPHash)) await savePhotoHashToId(id, img = await loadImage(imgSrc), pHashToId, idToPHash);
+                        try {
+                            img = await loadImage(imgSrc);
+                        } catch (err) { console.error(err); }
+
+                        if (img && !(id in idToPHash)) await savePhotoHashToId(id, img, pHashToId, idToPHash);
 
                         Object.assign(el.style, (blocklist.has(id) || chattedCache.has(id))
                             ? { display: 'none' }
-                            : getStyleForGender(
-                                getGenderByName(name),
-                                await getGenderByPhotoAndCache(img || await loadImage(imgSrc), id, photoGenderCache)
-                            )
+                            : getStyleForGender(getGenderByName(name), await getGenderByPhotoAndCache(img, id, photoGenderCache))
                         );
-                    } catch (err) { errorIds.push(el.id) && console.error(`filterProfiles error for ${el.id}`, err); }
+                    } catch (err) { console.error(`filterProfiles error for ${el.id}`, err); }
                 })
             );
             
-            if (errorIds.length > 5) throw new Error('too many failure ids');
-
             GM.setValue(PHOTO_GENDER_CACHE_KEY, photoGenderCache);
             GM.setValue(ID_TO_PHASH, idToPHash);
             GM.setValue(PHASH_TO_ID, pHashToId);
