@@ -466,6 +466,12 @@ function handlePathChange(path) {
     if (path.includes('/community')) return profileHandler.visit(path.split('/').pop());
 }
 
-navigation.addEventListener('navigate', (event) => handlePathChange(new URL(event.destination.url).pathname));
-
-handlePathChange(location.pathname);
+if (typeof navigation !== 'undefined') {
+    navigation.addEventListener('navigate', (event) => handlePathChange(new URL(event.destination.url).pathname));
+    handlePathChange(location.pathname);
+} else { // fallback for browsers that don't support Navigation API, e.g. Firefox
+    let lastPath;
+    setInterval(() => {
+      if (location.pathname !== lastPath) handlePathChange(lastPath = location.pathname);
+    }, 50);
+}
