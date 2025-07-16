@@ -420,7 +420,7 @@ const listingsHandler = (() => {
 
     let faceapiModelsLoading = false;
     const profileListingsObserver = new MutationObserver(filterProfiles);
-    async function visit() {
+    async function visit(nearbyListingsPage) {
         if (!firstNameMaleProbs) console.error('First-name male-probabilities not loaded!');
 
         if (!faceapiModelsLoading) {
@@ -434,7 +434,7 @@ const listingsHandler = (() => {
         const waitForListings = new MutationObserver(async () => {
             const listingsGrid = document.querySelector('.styles_grid__YwDSM');
             const highlightedProfs = document.querySelector('.styles_track__ElDHy');
-            if (listingsGrid && highlightedProfs) {
+            if (listingsGrid && (nearbyListingsPage || highlightedProfs)) {
                 waitForListings.disconnect();
                 profileListingsObserver.observe(listingsGrid, { childList: true });
                 await filterHighlightedProfiles();
@@ -463,6 +463,8 @@ function handlePathChange(path) {
 
     if (path.includes('/chats')) return chatsHandler.visit(path.split('/').pop());
     if (path === '/' || path === '/en' || path === '/community') return listingsHandler.visit();
+    if (path === '/' || path === '/en' || path === '/community') return listingsHandler.visit(false);
+    if (path === '/community/near') return listingsHandler.visit(true);
     if (path.includes('/community')) return profileHandler.visit(path.split('/').pop());
 }
 
