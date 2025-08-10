@@ -3,7 +3,6 @@
 // @description filter profiles by 1) gender (name/photo) 2) manual blocklist 3) already-chatted; various kbd shortcuts
 // @license     MIT
 // @match       *://app.tandem.net/*
-// @require     https://unpkg.com/imagehash-web/dist/imagehash-web.min.js
 // @require     https://cdn.jsdelivr.net/npm/face-api.js/dist/face-api.min.js
 // @require     https://rawcdn.githack.com/mednat/tandem-extras/refs/heads/main/fb-leak_forename_male-probs.js
 // @grant       GM.setValue
@@ -21,17 +20,13 @@ const FACEAPI_MODELS_URL = 'https://rawcdn.githack.com/justadudewhohacks/face-ap
 const CHATTED_CACHE = 'chattedCache';
 const PROFILE_BLOCKLIST = 'profileBlocklist';
 const PHOTO_GENDER_CACHE_KEY = 'photoGenderCache';
-const PHASH_TO_ID = 'pHashToId';
-const ID_TO_PHASH = 'idToPHash';
 
 unsafeWindow.getFirstNameMaleProb = (firstName) => firstNameMaleProbs[firstName];
 
+// TODO: rename, as blocklist isn't a "cache"
 unsafeWindow.checkBadCacheVals = async () => {
     [PROFILE_BLOCKLIST, CHATTED_CACHE].forEach(async (gmKey) => {
         if ((await GM.getValue(gmKey, [])).some(x => !x)) console.error(`falsy in ${gmKey}`);
-    });
-    [ID_TO_PHASH, PHASH_TO_ID].forEach(async (gmKey) => {
-        if (Object.entries(await GM.getValue(gmKey, {})).some(([k,v]) => !k || !v)) console.error(`falsy in ${gmKey}`);
     });
     if (Object.entries(await GM.getValue(PHOTO_GENDER_CACHE_KEY, {})).some(([k,v]) => !k || (!v && v!=0))) console.error(`falsy in ${PHOTO_GENDER_CACHE_KEY}`);
 };
@@ -72,21 +67,6 @@ async function loadImage(url) {
         onload: () => { URL.revokeObjectURL(img.src); resolve(img); },
         onerror: reject
     }));
-}
-
-async function savePhotoHashToId(id, img, pHashToId, idToPHash) {
-    try {
-        const hash = (await phash(img)).toHexString();
-        if (hash in pHashToId) console.warn(pHashToId[hash] === id ?
-                `HASH SELF-COLLISION for ${hash}, id ${id}!` :
-                `HASH COLLISION for ${hash} between ${id} and ${pHashToId[hash]}! overwriting...`
-            );
-
-        idToPHash[id] = hash;
-        pHashToId[hash] = id;
-
-        return hash;
-    } catch (err) { console.log(`error getting/storing image hash for ${id} with url ${imgSrc}: `, err); }
 }
 
 const chatsHandler = (() => {
@@ -226,23 +206,8 @@ const profileHandler = (() => {
         }[e.key]?.());
     }
 
-    async function visit(id) {
+    async function visit() {
         document.addEventListener('keydown', onProfileKeydown);
-
-        // associate profile photo hash with id
-        const idToPHash = await GM.getValue(ID_TO_PHASH, {});
-
-        if (id in idToPHash) return console.debug(`already have ${id} hash: ${idToPHash[id]}`);
-
-        const pHashToId = await GM.getValue(PHASH_TO_ID, {});
-        const imgSrc = (await waitForElement('img.styles_profilePicture__XAMpQ')).src;
-        console.debug(`got imgSrc: ${imgSrc}`);
-
-        const hash = await savePhotoHashToId(id, await loadImage(imgSrc), pHashToId, idToPHash);
-
-        GM.setValue(ID_TO_PHASH, idToPHash);
-        GM.setValue(PHASH_TO_ID, pHashToId);
-        console.debug(`saved ${id} <> hash: ${hash}`);
     }
 
     function cleanup() {
@@ -330,60 +295,19 @@ const listingsHandler = (() => {
         });
     }
 
-    async function filterHighlightedProfiles() {
-        console.log('filtering highlighted profiles...');
-        try {
-            const pHashToId = await GM.getValue(PHASH_TO_ID, {});
-            const blocklist = new Set(await GM.getValue(PROFILE_BLOCKLIST, []));
-            const chattedCache = new Set(await GM.getValue(CHATTED_CACHE, []));
-            const photoGenderCache = await GM.getValue(PHOTO_GENDER_CACHE_KEY, {});
-
-            await Promise.all([...document.querySelectorAll(
-                    '.styles_HighlightedProfile__fRL2W'+
-                    ':not([style*="display: none"])'
-                )].map(async (el) => {
-                    const {src: imgSrc , alt: name} = el.querySelector('div img');
-                    if (!imgSrc || !name) return console.error(`bad highlighted-profile element; name: ${name}, imgSrc: ${imgSrc}`, el);
-                    try {
-                        const img = await loadImage(imgSrc);
-
-                        let hash;
-                        try {
-                            hash = (await phash(img)).toHexString();
-                            console.debug(`(from listing) name: ${name}; hash: ${hash}`);
-                        } catch (err) { console.error(`failure getting image hash for highlighted profile, name: ${name}`, err); }
-
-                        if (!(hash in pHashToId)) return Object.assign(el.style, getStyleForGender(getGenderByName(name), await getGenderByPhoto(img)));
-
-                        const id = pHashToId[hash];
-                        console.debug(`hash ${hash} has id ${id}`);
-
-                        if (blocklist.has(id) || chattedCache.has(id)) {
-                            console.debug(`found id ${id} with hash ${hash} in blocklist or chattedCache, hiding highlighted profile...`);
-                            return el.style.display = 'none';
-                        }
-
-                        Object.assign(el.style, getStyleForGender(getGenderByName(name), await getGenderByPhotoAndCache(img, id, photoGenderCache)));
-                    } catch(err) { throw new Error(`filterHighlightedProfiles error for ${name}`, { cause: err }); }
-                })
-            );
-
-            GM.setValue(PHOTO_GENDER_CACHE_KEY, photoGenderCache);
-        } catch (err) { console.error('filterHighlightedProfiles error',err); }
-    }
-
     const alreadyFilteredCache = new Set();
     let filterProfilesExecution = Promise.resolve();
     async function filterProfiles() { filterProfilesExecution = (async () => {
         await filterProfilesExecution;
         console.log('filterProfiles executing');
+
+        // hide highlighted profiles
+        document.querySelector('.styles_HighlightedProfileBanner___0ts_, .styles_highlightedProfilesBanner__SMBNK')?.style.setProperty('display','none'); 
+
         try {
             const blocklist = new Set(await GM.getValue(PROFILE_BLOCKLIST, []));
             const chattedCache = new Set(await GM.getValue(CHATTED_CACHE, []));
             const photoGenderCache = await GM.getValue(PHOTO_GENDER_CACHE_KEY, {});
-
-            const idToPHash = await GM.getValue(ID_TO_PHASH, {});
-            const pHashToId = await GM.getValue(PHASH_TO_ID, {});
 
             await Promise.all([...document.querySelectorAll(
                     '.styles_thumbnail__cFAy3'+
@@ -402,8 +326,6 @@ const listingsHandler = (() => {
                             img = await loadImage(imgSrc);
                         } catch (err) { console.error(err); }
 
-                        if (img && !(id in idToPHash)) await savePhotoHashToId(id, img, pHashToId, idToPHash);
-
                         Object.assign(el.style, (blocklist.has(id) || chattedCache.has(id))
                             ? { display: 'none' }
                             : getStyleForGender(getGenderByName(name), await getGenderByPhotoAndCache(img, id, photoGenderCache))
@@ -413,14 +335,12 @@ const listingsHandler = (() => {
             );
             
             GM.setValue(PHOTO_GENDER_CACHE_KEY, photoGenderCache);
-            GM.setValue(ID_TO_PHASH, idToPHash);
-            GM.setValue(PHASH_TO_ID, pHashToId);
         } catch (err) { console.error('filterProfiles error',err); }
     })();}
 
     let faceapiModelsLoading = false;
     const profileListingsObserver = new MutationObserver(filterProfiles);
-    async function visit(nearbyListingsPage) {
+    async function visit() {
         if (!firstNameMaleProbs) console.error('First-name male-probabilities not loaded!');
 
         if (!faceapiModelsLoading) {
@@ -433,11 +353,9 @@ const listingsHandler = (() => {
 
         const waitForListings = new MutationObserver(async () => {
             const listingsGrid = document.querySelector('.styles_grid__YwDSM');
-            const highlightedProfs = document.querySelector('.styles_track__ElDHy');
-            if (listingsGrid && (nearbyListingsPage || highlightedProfs)) {
+            if (listingsGrid) {
                 waitForListings.disconnect();
                 profileListingsObserver.observe(listingsGrid, { childList: true });
-                await filterHighlightedProfiles();
                 filterProfiles();
             }
         });
@@ -462,9 +380,7 @@ function handlePathChange(path) {
     [listingsHandler, profileHandler, chatsHandler].forEach(h => h.cleanup());
 
     if (path.includes('/chats')) return chatsHandler.visit(path.split('/').pop());
-    if (path === '/' || path === '/en' || path === '/community') return listingsHandler.visit();
-    if (path === '/' || path === '/en' || path === '/community') return listingsHandler.visit(false);
-    if (path === '/community/near') return listingsHandler.visit(true);
+    if (path === '/' || path === '/en' || path === '/community' || path === '/community/near') return listingsHandler.visit();
     if (path.includes('/community')) return profileHandler.visit(path.split('/').pop());
 }
 
