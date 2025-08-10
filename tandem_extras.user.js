@@ -23,6 +23,26 @@ const PHOTO_GENDER_CACHE_KEY = 'photoGenderCache';
 
 unsafeWindow.getFirstNameMaleProb = (firstName) => firstNameMaleProbs[firstName];
 
+const LAST_BACKUP_TIME = 'lastBackupTime';
+const BACKUP_INTERVAL = 1000 * 60 * 60 * 24 * 7; // 7 days
+function showBackupReminder() {
+    if (document.getElementById('backup-reminder')) return;
+  
+    const banner = document.createElement('div');
+    banner.id = 'backup-reminder';
+    banner.innerHTML = `
+        <div style="position:fixed;bottom:0;left:0;right:0;background:#f39c12;color:#fff;padding:8px;text-align:center;z-index:9999;font:14px sans-serif">
+            📁 Time to backup userscript data! 
+            <button onclick="this.parentElement.parentElement.remove()" style="margin-left:10px;background:#e67e22;border:none;color:#fff;padding:2px 8px;cursor:pointer">Dismiss</button>
+        </div>`;
+    document.body.appendChild(banner);
+
+    banner.querySelector('button').onclick = () => {
+        GM.setValue(LAST_BACKUP_TIME, Date.now());
+        banner.remove();
+    }
+}
+
 // TODO: rename, as blocklist isn't a "cache"
 unsafeWindow.checkBadCacheVals = async () => {
     [PROFILE_BLOCKLIST, CHATTED_CACHE].forEach(async (gmKey) => {
@@ -374,8 +394,10 @@ const listingsHandler = (() => {
 if (window.scriptInitialized) return; // in case of multiple script injections
 window.scriptInitialized = true;
 
-function handlePathChange(path) {
+async function handlePathChange(path) {
     console.log(`path is ${path}`);
+
+    if (Date.now() - (await GM.getValue(LAST_BACKUP_TIME, 0)) > BACKUP_INTERVAL) showBackupReminder();
 
     [listingsHandler, profileHandler, chatsHandler].forEach(h => h.cleanup());
 
