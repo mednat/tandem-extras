@@ -26,6 +26,7 @@ const ID_TO_PHASH = 'idToPHash';
 
 unsafeWindow.getFirstNameMaleProb = (firstName) => firstNameMaleProbs[firstName];
 
+// TODO: rename, as blocklist isn't a "cache"
 unsafeWindow.checkBadCacheVals = async () => {
     [PROFILE_BLOCKLIST, CHATTED_CACHE].forEach(async (gmKey) => {
         if ((await GM.getValue(gmKey, [])).some(x => !x)) console.error(`falsy in ${gmKey}`);
@@ -330,48 +331,6 @@ const listingsHandler = (() => {
         });
     }
 
-    async function filterHighlightedProfiles() {
-        console.log('filtering highlighted profiles...');
-        try {
-            const pHashToId = await GM.getValue(PHASH_TO_ID, {});
-            const blocklist = new Set(await GM.getValue(PROFILE_BLOCKLIST, []));
-            const chattedCache = new Set(await GM.getValue(CHATTED_CACHE, []));
-            const photoGenderCache = await GM.getValue(PHOTO_GENDER_CACHE_KEY, {});
-
-            await Promise.all([...document.querySelectorAll(
-                    '.styles_HighlightedProfile__fRL2W'+
-                    ':not([style*="display: none"])'
-                )].map(async (el) => {
-                    const {src: imgSrc , alt: name} = el.querySelector('div img');
-                    if (!imgSrc || !name) return console.error(`bad highlighted-profile element; name: ${name}, imgSrc: ${imgSrc}`, el);
-                    try {
-                        const img = await loadImage(imgSrc);
-
-                        let hash;
-                        try {
-                            hash = (await phash(img)).toHexString();
-                            console.debug(`(from listing) name: ${name}; hash: ${hash}`);
-                        } catch (err) { console.error(`failure getting image hash for highlighted profile, name: ${name}`, err); }
-
-                        if (!(hash in pHashToId)) return Object.assign(el.style, getStyleForGender(getGenderByName(name), await getGenderByPhoto(img)));
-
-                        const id = pHashToId[hash];
-                        console.debug(`hash ${hash} has id ${id}`);
-
-                        if (blocklist.has(id) || chattedCache.has(id)) {
-                            console.debug(`found id ${id} with hash ${hash} in blocklist or chattedCache, hiding highlighted profile...`);
-                            return el.style.display = 'none';
-                        }
-
-                        Object.assign(el.style, getStyleForGender(getGenderByName(name), await getGenderByPhotoAndCache(img, id, photoGenderCache)));
-                    } catch(err) { throw new Error(`filterHighlightedProfiles error for ${name}`, { cause: err }); }
-                })
-            );
-
-            GM.setValue(PHOTO_GENDER_CACHE_KEY, photoGenderCache);
-        } catch (err) { console.error('filterHighlightedProfiles error',err); }
-    }
-
     const alreadyFilteredCache = new Set();
     let filterProfilesExecution = Promise.resolve();
     async function filterProfiles() { filterProfilesExecution = (async () => {
@@ -420,7 +379,7 @@ const listingsHandler = (() => {
 
     let faceapiModelsLoading = false;
     const profileListingsObserver = new MutationObserver(filterProfiles);
-    async function visit(nearbyListingsPage) {
+    async function visit() {
         if (!firstNameMaleProbs) console.error('First-name male-probabilities not loaded!');
 
         if (!faceapiModelsLoading) {
@@ -433,11 +392,9 @@ const listingsHandler = (() => {
 
         const waitForListings = new MutationObserver(async () => {
             const listingsGrid = document.querySelector('.styles_grid__YwDSM');
-            const highlightedProfs = document.querySelector('.styles_track__ElDHy');
-            if (listingsGrid && (nearbyListingsPage || highlightedProfs)) {
+            if (listingsGrid) {
                 waitForListings.disconnect();
                 profileListingsObserver.observe(listingsGrid, { childList: true });
-                await filterHighlightedProfiles();
                 filterProfiles();
             }
         });
@@ -462,9 +419,7 @@ function handlePathChange(path) {
     [listingsHandler, profileHandler, chatsHandler].forEach(h => h.cleanup());
 
     if (path.includes('/chats')) return chatsHandler.visit(path.split('/').pop());
-    if (path === '/' || path === '/en' || path === '/community') return listingsHandler.visit();
-    if (path === '/' || path === '/en' || path === '/community') return listingsHandler.visit(false);
-    if (path === '/community/near') return listingsHandler.visit(true);
+    if (path === '/' || path === '/en' || path === '/community' || path === '/community/near') return listingsHandler.visit();
     if (path.includes('/community')) return profileHandler.visit(path.split('/').pop());
 }
 
