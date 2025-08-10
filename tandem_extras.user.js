@@ -3,7 +3,6 @@
 // @description filter profiles by 1) gender (name/photo) 2) manual blocklist 3) already-chatted; various kbd shortcuts
 // @license     MIT
 // @match       *://app.tandem.net/*
-// @require     https://unpkg.com/imagehash-web/dist/imagehash-web.min.js
 // @require     https://cdn.jsdelivr.net/npm/face-api.js/dist/face-api.min.js
 // @require     https://rawcdn.githack.com/mednat/tandem-extras/refs/heads/main/fb-leak_forename_male-probs.js
 // @grant       GM.setValue
@@ -21,8 +20,6 @@ const FACEAPI_MODELS_URL = 'https://rawcdn.githack.com/justadudewhohacks/face-ap
 const CHATTED_CACHE = 'chattedCache';
 const PROFILE_BLOCKLIST = 'profileBlocklist';
 const PHOTO_GENDER_CACHE_KEY = 'photoGenderCache';
-const PHASH_TO_ID = 'pHashToId';
-const ID_TO_PHASH = 'idToPHash';
 
 unsafeWindow.getFirstNameMaleProb = (firstName) => firstNameMaleProbs[firstName];
 
@@ -30,9 +27,6 @@ unsafeWindow.getFirstNameMaleProb = (firstName) => firstNameMaleProbs[firstName]
 unsafeWindow.checkBadCacheVals = async () => {
     [PROFILE_BLOCKLIST, CHATTED_CACHE].forEach(async (gmKey) => {
         if ((await GM.getValue(gmKey, [])).some(x => !x)) console.error(`falsy in ${gmKey}`);
-    });
-    [ID_TO_PHASH, PHASH_TO_ID].forEach(async (gmKey) => {
-        if (Object.entries(await GM.getValue(gmKey, {})).some(([k,v]) => !k || !v)) console.error(`falsy in ${gmKey}`);
     });
     if (Object.entries(await GM.getValue(PHOTO_GENDER_CACHE_KEY, {})).some(([k,v]) => !k || (!v && v!=0))) console.error(`falsy in ${PHOTO_GENDER_CACHE_KEY}`);
 };
@@ -73,21 +67,6 @@ async function loadImage(url) {
         onload: () => { URL.revokeObjectURL(img.src); resolve(img); },
         onerror: reject
     }));
-}
-
-async function savePhotoHashToId(id, img, pHashToId, idToPHash) {
-    try {
-        const hash = (await phash(img)).toHexString();
-        if (hash in pHashToId) console.warn(pHashToId[hash] === id ?
-                `HASH SELF-COLLISION for ${hash}, id ${id}!` :
-                `HASH COLLISION for ${hash} between ${id} and ${pHashToId[hash]}! overwriting...`
-            );
-
-        idToPHash[id] = hash;
-        pHashToId[hash] = id;
-
-        return hash;
-    } catch (err) { console.log(`error getting/storing image hash for ${id} with url ${imgSrc}: `, err); }
 }
 
 const chatsHandler = (() => {
@@ -227,23 +206,8 @@ const profileHandler = (() => {
         }[e.key]?.());
     }
 
-    async function visit(id) {
+    async function visit() {
         document.addEventListener('keydown', onProfileKeydown);
-
-        // associate profile photo hash with id
-        const idToPHash = await GM.getValue(ID_TO_PHASH, {});
-
-        if (id in idToPHash) return console.debug(`already have ${id} hash: ${idToPHash[id]}`);
-
-        const pHashToId = await GM.getValue(PHASH_TO_ID, {});
-        const imgSrc = (await waitForElement('img.styles_profilePicture__XAMpQ')).src;
-        console.debug(`got imgSrc: ${imgSrc}`);
-
-        const hash = await savePhotoHashToId(id, await loadImage(imgSrc), pHashToId, idToPHash);
-
-        GM.setValue(ID_TO_PHASH, idToPHash);
-        GM.setValue(PHASH_TO_ID, pHashToId);
-        console.debug(`saved ${id} <> hash: ${hash}`);
     }
 
     function cleanup() {
@@ -341,9 +305,6 @@ const listingsHandler = (() => {
             const chattedCache = new Set(await GM.getValue(CHATTED_CACHE, []));
             const photoGenderCache = await GM.getValue(PHOTO_GENDER_CACHE_KEY, {});
 
-            const idToPHash = await GM.getValue(ID_TO_PHASH, {});
-            const pHashToId = await GM.getValue(PHASH_TO_ID, {});
-
             await Promise.all([...document.querySelectorAll(
                     '.styles_thumbnail__cFAy3'+
                     ':not(.styles_skeleton__J2O6m)' +
@@ -361,8 +322,6 @@ const listingsHandler = (() => {
                             img = await loadImage(imgSrc);
                         } catch (err) { console.error(err); }
 
-                        if (img && !(id in idToPHash)) await savePhotoHashToId(id, img, pHashToId, idToPHash);
-
                         Object.assign(el.style, (blocklist.has(id) || chattedCache.has(id))
                             ? { display: 'none' }
                             : getStyleForGender(getGenderByName(name), await getGenderByPhotoAndCache(img, id, photoGenderCache))
@@ -372,8 +331,6 @@ const listingsHandler = (() => {
             );
             
             GM.setValue(PHOTO_GENDER_CACHE_KEY, photoGenderCache);
-            GM.setValue(ID_TO_PHASH, idToPHash);
-            GM.setValue(PHASH_TO_ID, pHashToId);
         } catch (err) { console.error('filterProfiles error',err); }
     })();}
 
