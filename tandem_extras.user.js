@@ -24,7 +24,7 @@ const PHOTO_GENDER_CACHE_KEY = 'photoGenderCache';
 unsafeWindow.getFirstNameMaleProb = (firstName) => firstNameMaleProbs[firstName];
 
 const LAST_BACKUP_TIME = 'lastBackupTime';
-const BACKUP_INTERVAL = 1000 * 60 * 60 * 24 * 7; // 7 days
+const BACKUP_INTERVAL = 1000 * 60 * 60 * 24 * 30; // 30 days
 function showBackupReminder() {
     if (document.getElementById('backup-reminder')) return;
   
