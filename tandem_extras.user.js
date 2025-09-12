@@ -222,7 +222,7 @@ const profileHandler = (() => {
             'ArrowUp': () => navigateSlideshow('back'),
             'ArrowRight': () => navigateSlideshow('forward'),
             'ArrowDown': () => navigateSlideshow('forward'),
-            'Space': () => navigateSlideshow('forward'),
+            ' ': () => navigateSlideshow('forward'),
             'Escape': () => document.querySelector('.styles_outsideContent__B7e2g')?.click(), // exit slideshow
             'b': () => handleDoubleKeypress('b', toggleProfileBlocklist),
             'B': () => handleDoubleKeypress('B', toggleBlockUserFromProfile),
