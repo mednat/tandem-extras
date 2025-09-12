@@ -24,7 +24,7 @@ const PHOTO_GENDER_CACHE_KEY = 'photoGenderCache';
 unsafeWindow.getFirstNameMaleProb = (firstName) => firstNameMaleProbs[firstName];
 
 const LAST_BACKUP_HIDELIST_SIZE = 'lastBackupHidelistSize';
-const BACKUP_HIDELIST_SIZE_INTERVAL = 500;
+const BACKUP_HIDELIST_SIZE_INTERVAL = 2000;
 function showBackupReminder(delta) {
     if (document.getElementById('backup-reminder')) return;
   
