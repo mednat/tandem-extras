@@ -324,7 +324,7 @@ const listingsHandler = (() => {
         await filterProfilesExecution;
         console.log('filterProfiles executing');
 
-        // hide highlighted profiles
+        // hide 'highlighted profiles'
         document.querySelector('.styles_HighlightedProfileBanner___0ts_, .styles_highlightedProfilesBanner__SMBNK')?.style.setProperty('display','none'); 
 
         try {
