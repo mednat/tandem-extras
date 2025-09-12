@@ -23,8 +23,8 @@ const PHOTO_GENDER_CACHE_KEY = 'photoGenderCache';
 
 unsafeWindow.getFirstNameMaleProb = (firstName) => firstNameMaleProbs[firstName];
 
-const LAST_BACKUP_TIME = 'lastBackupTime';
-const BACKUP_INTERVAL = 1000 * 60 * 60 * 24 * 30; // 30 days
+const LAST_BACKUP_HIDELIST_SIZE = 'lastBackupHidelistSize';
+const BACKUP_HIDELIST_SIZE_INTERVAL = 200;
 function showBackupReminder() {
     if (document.getElementById('backup-reminder')) return;
   
@@ -37,8 +37,8 @@ function showBackupReminder() {
         </div>`;
     document.body.appendChild(banner);
 
-    banner.querySelector('button').onclick = () => {
-        GM.setValue(LAST_BACKUP_TIME, Date.now());
+    banner.querySelector('button').onclick = async () => {
+        GM.setValue(LAST_BACKUP_HIDELIST_SIZE, (await GM.getValue(HIDELIST, [])).length);
         banner.remove();
     }
 }
@@ -434,6 +434,10 @@ const listingsHandler = (() => {
             }
         });
         waitForListings.observe(document.body, { childList: true, subtree: true });
+
+        const hidelistDelta = (await GM.getValue(HIDELIST, [])).length - (await GM.getValue(LAST_BACKUP_HIDELIST_SIZE, 0)) 
+        console.debug('hidelist delta: ', hidelistDelta);
+        if (hidelistDelta > BACKUP_HIDELIST_SIZE_INTERVAL) showBackupReminder();
     }
 
     function cleanup() {
@@ -451,8 +455,6 @@ window.scriptInitialized = true;
 
 async function handlePathChange(path) {
     console.log(`path is ${path}`);
-
-    if (Date.now() - (await GM.getValue(LAST_BACKUP_TIME, 0)) > BACKUP_INTERVAL) showBackupReminder();
 
     [listingsHandler, profileHandler, chatsHandler].forEach(h => h.cleanup());
 
