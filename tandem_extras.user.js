@@ -318,19 +318,31 @@ const listingsHandler = (() => {
         });
     }
 
-    unsafeWindow.batchHide = async () => {
-        const hidelist = new Set(await GM.getValue(HIDELIST, []));
+    function addBatchHideButton() {
+        const btn = document.createElement('button');
+        btn.id = 'batchHide';
+        btn.textContent = 'batch hide';
+        btn.style.cssText = 'position:fixed; bottom:10px; left:10px; z-index:10000; padding:10px; display:none;';
 
-        selectedForBatchHide.forEach(el => {
-            hidelist.add(el.id);
-            el.style.display = 'none';
+        btn.addEventListener('click', async () => {
+            const hidelist = new Set(await GM.getValue(HIDELIST, []));
+
+            selectedForBatchHide.forEach(el => {
+                hidelist.add(el.id);
+                el.style.display = 'none';
+            });
+
+            await GM.setValue(HIDELIST, [...hidelist]);
+            selectedForBatchHide.clear();
+            btn.style.display = selectedForBatchHide.size > 0 ? 'block' : 'none';
         });
 
-        await GM.setValue(HIDELIST, [...hidelist]);
-        selectedForBatchHide.clear();
+        document.body.appendChild(btn);
+        batchHideButton = btn;
     }
 
     const selectedForBatchHide = new Set();
+    let batchHideButton; // TODO: more elegant way than global ref to button
     function addBatchHideSelectListener(el) {
         el.addEventListener('click', (e) => {
             if (e.altKey) {
@@ -341,6 +353,10 @@ const listingsHandler = (() => {
                     selectedForBatchHide.add(el);
                     el.style.outline = '2px solid blue';
                 }
+                
+                if (!batchHideButton) console.error('no batch hide button!');
+                batchHideButton.style.display = selectedForBatchHide.size > 0 ? 'block' : 'none';
+
                 e.preventDefault();
                 e.stopPropagation();
             }
@@ -413,6 +429,8 @@ const listingsHandler = (() => {
                 waitForListings.disconnect();
                 profileListingsObserver.observe(listingsGrid, { childList: true });
                 filterProfiles();
+                addBatchHideButton();
+
             }
         });
         waitForListings.observe(document.body, { childList: true, subtree: true });
