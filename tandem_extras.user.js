@@ -318,6 +318,35 @@ const listingsHandler = (() => {
         });
     }
 
+    unsafeWindow.batchHide = async () => {
+        const hidelist = new Set(await GM.getValue(HIDELIST, []));
+
+        selectedForBatchHide.forEach(el => {
+            hidelist.add(el.id);
+            el.style.display = 'none';
+        });
+
+        await GM.setValue(HIDELIST, [...hidelist]);
+        selectedForBatchHide.clear();
+    }
+
+    const selectedForBatchHide = new Set();
+    function addBatchHideSelectListener(el) {
+        el.addEventListener('click', (e) => {
+            if (e.altKey) {
+                if (selectedForBatchHide.has(el)) {
+                    selectedForBatchHide.delete(el);
+                    el.style.outline = '';
+                } else {
+                    selectedForBatchHide.add(el);
+                    el.style.outline = '2px solid blue';
+                }
+                e.preventDefault();
+                e.stopPropagation();
+            }
+        });
+    }
+
     const alreadyFilteredCache = new Set();
     let filterProfilesExecution = Promise.resolve();
     async function filterProfiles() { filterProfilesExecution = (async () => {
@@ -343,6 +372,10 @@ const listingsHandler = (() => {
                         if (!id || !imgSrc || !name) return console.error(`bad regular-profile element; id: ${id}, name: ${name}, imgSrc: ${imgSrc}`, el);
 
                         if (alreadyFilteredCache.has(id) || !alreadyFilteredCache.add(id)) return;
+
+                        try {
+                            addBatchHideSelectListener(el);
+                        } catch (err) { console.error(`error adding batchhideselectlistener for ${id}`, err); }
 
                         let img;
                         try {
@@ -389,6 +422,7 @@ const listingsHandler = (() => {
         profileListingsObserver.disconnect();
         filterProfilesExecution = Promise.resolve();
         alreadyFilteredCache.clear();
+        selectedForBatchHide.clear();
     }
 
     return { visit, cleanup };
