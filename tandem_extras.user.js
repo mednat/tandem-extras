@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Tandem Enhancement Suite
-// @description filter profiles by 1) gender (name/photo) 2) manual blocklist 3) already-chatted; various kbd shortcuts
+// @description filter profiles by 1) gender (name/photo) 2) manual hidelist 3) already-chatted; various kbd shortcuts
 // @license     MIT
 // @match       *://app.tandem.net/*
 // @require     https://cdn.jsdelivr.net/npm/face-api.js/dist/face-api.min.js
@@ -18,7 +18,7 @@ const firstNameMaleProbs = window.firstNameMaleProbs;
 const FACEAPI_MODELS_URL = 'https://rawcdn.githack.com/justadudewhohacks/face-api.js/refs/heads/master/weights';
 
 const CHATTED_CACHE = 'chattedCache';
-const PROFILE_BLOCKLIST = 'profileBlocklist';
+const HIDELIST = 'profileBlocklist'; //TODO: update GM storage varname
 const PHOTO_GENDER_CACHE_KEY = 'photoGenderCache';
 
 unsafeWindow.getFirstNameMaleProb = (firstName) => firstNameMaleProbs[firstName];
@@ -43,9 +43,9 @@ function showBackupReminder() {
     }
 }
 
-// TODO: rename, as blocklist isn't a "cache"
+// TODO: rename function, as hidelist isn't a "cache"
 unsafeWindow.checkBadCacheVals = async () => {
-    [PROFILE_BLOCKLIST, CHATTED_CACHE].forEach(async (gmKey) => {
+    [HIDELIST, CHATTED_CACHE].forEach(async (gmKey) => {
         if ((await GM.getValue(gmKey, [])).some(x => !x)) console.error(`falsy in ${gmKey}`);
     });
     if (Object.entries(await GM.getValue(PHOTO_GENDER_CACHE_KEY, {})).some(([k,v]) => !k || (!v && v!=0))) console.error(`falsy in ${PHOTO_GENDER_CACHE_KEY}`);
@@ -188,15 +188,15 @@ const profileHandler = (() => {
         document.body.appendChild(notification);
     }
 
-    async function toggleProfileBlocklist() {
-        const blocklist = new Set(await GM.getValue(PROFILE_BLOCKLIST, []));
+    async function toggleHidelistInclusion() {
+        const hidelist = new Set(await GM.getValue(HIDELIST, []));
 
         const id = location.pathname.split('/').pop();
-        console.debug('profile ID to toggle blocklist is: ', id);
+        console.debug('profile ID to toggle hiding is: ', id);
 
-        const deleted = blocklist.delete(id);
-        await GM.setValue(PROFILE_BLOCKLIST, [...(deleted ? blocklist : blocklist.add(id))]);
-        createAlertBanner(`Profile ${id} ${deleted ? 'removed from' : 'added to'} blocklist.`, deleted ? 'rgb(55, 255, 142)' : 'rgb(255, 55, 112)');
+        const deleted = hidelist.delete(id);
+        await GM.setValue(HIDELIST, [...(deleted ? hidelist : hidelist.add(id))]);
+        createAlertBanner(`Profile ${id} ${deleted ? 'removed from' : 'added to'} hidelist.`, deleted ? 'rgb(55, 255, 142)' : 'rgb(255, 55, 112)');
     }
 
     async function toggleBlockUserFromProfile() {
@@ -224,7 +224,7 @@ const profileHandler = (() => {
             'ArrowDown': () => navigateSlideshow('forward'),
             ' ': () => navigateSlideshow('forward'),
             'Escape': () => document.querySelector('.styles_outsideContent__B7e2g')?.click(), // exit slideshow
-            'b': () => handleDoubleKeypress('b', toggleProfileBlocklist),
+            'b': () => handleDoubleKeypress('b', toggleHidelistInclusion),
             'B': () => handleDoubleKeypress('B', toggleBlockUserFromProfile),
         }[e.key]?.());
     }
@@ -328,7 +328,7 @@ const listingsHandler = (() => {
         document.querySelector('.styles_HighlightedProfileBanner___0ts_, .styles_highlightedProfilesBanner__SMBNK')?.style.setProperty('display','none'); 
 
         try {
-            const blocklist = new Set(await GM.getValue(PROFILE_BLOCKLIST, []));
+            const hidelist = new Set(await GM.getValue(HIDELIST, []));
             const chattedCache = new Set(await GM.getValue(CHATTED_CACHE, []));
             const photoGenderCache = await GM.getValue(PHOTO_GENDER_CACHE_KEY, {});
 
@@ -349,7 +349,7 @@ const listingsHandler = (() => {
                             img = await loadImage(imgSrc);
                         } catch (err) { console.error(err); }
 
-                        Object.assign(el.style, (blocklist.has(id) || chattedCache.has(id))
+                        Object.assign(el.style, (hidelist.has(id) || chattedCache.has(id))
                             ? { display: 'none' }
                             : getStyleForGender(getGenderByName(name), await getGenderByPhotoAndCache(img, id, photoGenderCache))
                         );
