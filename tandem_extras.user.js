@@ -23,8 +23,8 @@ const PHOTO_GENDER_CACHE_KEY = 'photoGenderCache';
 
 unsafeWindow.getFirstNameMaleProb = (firstName) => firstNameMaleProbs[firstName];
 
-const LAST_BACKUP_HIDELIST_SIZE = 'lastBackupHidelistSize';
-const BACKUP_HIDELIST_SIZE_INTERVAL = 2000;
+const LAST_BACKUP_CHATCACHE_SIZE = 'lastBackupChattedCacheSize';
+const BACKUP_CHATCACHE_SIZE_INTERVAL = 200;
 function showBackupReminder(delta) {
     if (document.getElementById('backup-reminder')) return;
   
@@ -32,7 +32,7 @@ function showBackupReminder(delta) {
     banner.id = 'backup-reminder';
     banner.innerHTML = `
         <div style="position:fixed;bottom:0;left:0;right:0;background:#f39c12;color:#fff;padding:8px;text-align:center;z-index:9999;font:14px sans-serif">
-            📁 Time to backup userscript data, hidelist grown by ${delta}! 
+            📁 Time to backup userscript data, chattedCache grown by ${delta}! 
             <button onclick="this.parentElement.parentElement.remove()" style="margin-left:10px;background:#e67e22;border:none;color:#fff;padding:2px 8px;cursor:pointer">Dismiss</button>
         </div>`;
     document.body.appendChild(banner);
@@ -432,9 +432,9 @@ const listingsHandler = (() => {
         });
         waitForListings.observe(document.body, { childList: true, subtree: true });
 
-        const hidelistDelta = (await GM.getValue(HIDELIST, [])).length - (await GM.getValue(LAST_BACKUP_HIDELIST_SIZE, 0)) 
-        console.debug('hidelist delta: ', hidelistDelta);
-        if (hidelistDelta > BACKUP_HIDELIST_SIZE_INTERVAL) showBackupReminder(hidelistDelta);
+        const chattedCacheDelta = (await GM.getValue(CHATTED_CACHE, [])).length - (await GM.getValue(LAST_BACKUP_CHATCACHE_SIZE, 0)) 
+        console.debug('chattedCache delta: ', chattedCacheDelta);
+        if (chattedCacheDelta > BACKUP_CHATCACHE_SIZE_INTERVAL) showBackupReminder(chattedCacheDelta);
     }
 
     function cleanup() {
