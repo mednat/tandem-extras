@@ -315,6 +315,14 @@ const listingsHandler = (() => {
         });
     }
 
+    unsafeWindow.openAllVisibleProfiles = () => {
+        document.querySelectorAll(
+                    '.styles_thumbnail__cFAy3'+
+                    ':not(.styles_skeleton__J2O6m)' +
+                    ':not([style*="display: none"])'
+        ).forEach(el => window.open(el.href, '_blank'));
+    }
+
     function addBatchHideButton() {
         const btn = document.createElement('button');
         btn.id = 'batchHide';
