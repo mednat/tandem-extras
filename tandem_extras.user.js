@@ -315,13 +315,22 @@ const listingsHandler = (() => {
         });
     }
 
-    unsafeWindow.openAllVisibleProfiles = () => {
-        document.querySelectorAll(
-                    '.styles_thumbnail__cFAy3'+
-                    ':not(.styles_skeleton__J2O6m)' +
-                    ':not([style*="display: none"])'
-        ).forEach(el => window.open(el.href, '_blank'));
-    }
+    function addOpenAllVisibleProfilesButton() {
+        const btn = document.createElement('button');
+        btn.id = 'openAllVisibleProfiles';
+        btn.textContent = 'open all';
+        btn.style.cssText = 'position:fixed; bottom:60px; left:10px; z-index:10000; padding:10px;';
+
+        btn.addEventListener('click', () => {
+            document.querySelectorAll(
+                        '.styles_thumbnail__cFAy3'+
+                        ':not(.styles_skeleton__J2O6m)' +
+                        ':not([style*="display: none"])'
+            ).forEach(el => window.open(el.href, '_blank'));
+        });
+
+        document.body.appendChild(btn);
+    } 
 
     function addBatchHideButton() {
         const btn = document.createElement('button');
@@ -435,6 +444,7 @@ const listingsHandler = (() => {
                 profileListingsObserver.observe(listingsGrid, { childList: true });
                 filterProfiles();
                 addBatchHideButton();
+                addOpenAllVisibleProfilesButton();
 
             }
         });
