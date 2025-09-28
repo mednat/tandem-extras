@@ -249,7 +249,8 @@ const listingsHandler = (() => {
         /* TODO: combine scores better -- current hiding logic:
             - if only one MP, if significiantly high, hide TODO: make dynamic
             - if both near enough to threshold, hide
-            - if both above 50% and one passes threshold, hide
+            - if one passes threshold and other ambig enough, hide
+            - if name significantly high and face not significantly low, hide
 
             - average for color indicator if the two MPs aren't too far apart
             
@@ -263,7 +264,9 @@ const listingsHandler = (() => {
 
         if (nameMP > mpThreshold*0.9 && faceMP > mpThreshold*0.9) return { display: 'none' };
 
-        if (Math.min(nameMP,faceMP) > 0.5 && Math.max(nameMP, faceMP) > mpThreshold) return { display: 'none' };
+        if (Math.min(nameMP,faceMP) > 0.4 && Math.max(nameMP, faceMP) > mpThreshold) return { display: 'none' };
+
+        if (nameMP > 0.95 && faceMP > 0.1) return { display: 'none' };
 
         if (Math.abs(faceMP - nameMP) < 0.3) {
             const aveMP = (faceMP + nameMP) / 2;
