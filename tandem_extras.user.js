@@ -314,25 +314,27 @@ const listingsHandler = (() => {
         } catch (err) { console.error(`error getting face gender for id ${id}`, err); }
     }
 
-    //TODO: set element properties instead of storing global sets
-    const unhiddenGStyledProfiles = new Set(); 
     unsafeWindow.toggleHiddenGStyledProfiles = () => {
-        if(unhiddenGStyledProfiles.size) {
+        const uGSPs = [...document.querySelectorAll('.styles_thumbnail__cFAy3')].filter(e => e.uGSP);
+        console.debug('ugsp', uGSPs.length);
+        if(uGSPs.length) {
             console.debug('re-hiding gStyled profiles...');
-            unhiddenGStyledProfiles.forEach(id => document.getElementById(id).style.display = 'none');
-            return unhiddenGStyledProfiles.clear();
+            uGSPs.forEach(el => {
+                el.style.display = 'none';
+                el.uGSP = false;
+            });
+        } else {
+            if(unhiddenProfiles.size) return console.error('cannot unhide gStyled only when already unhidden profiles');
+
+            console.debug('unhiding gStyled profiles...');
+            document.querySelectorAll('.styles_thumbnail__cFAy3').forEach(el => {
+                if (el.gStyled && el.style.display === 'none') {
+                    el.uGSP = true;
+                    el.style.display = '';
+                    el.style.backgroundColor = 'rgba(174, 144, 82, 0.79)';
+                }
+            });
         }
-
-        if(unhiddenProfiles.size) console.error('cannot unhide gStyled only when already unhidden profiles');
-
-        console.debug('unhiding gStyled profiles...');
-        document.querySelectorAll('.styles_thumbnail__cFAy3').forEach(el => {
-            if (el.gStyled && el.style.display === 'none') {
-                unhiddenGStyledProfiles.add(el.id);
-                el.style.display = '';
-                el.style.backgroundColor = 'rgba(174, 144, 82, 0.79)';
-            }
-        });
     }
 
     //TODO: set element properties instead of storing global sets
@@ -344,7 +346,7 @@ const listingsHandler = (() => {
             return unhiddenProfiles.clear();
         }
 
-        if(unhiddenGStyledProfiles.size) console.error('cannot unhide when already unhidden gStyled profiles');
+        if([...document.querySelectorAll('.styles_thumbnail__cFAy3')].filter(e => e.uGSP).length) return console.error('cannot unhide when already unhidden gStyled profiles');
 
         console.debug('unhiding profiles...');
         document.querySelectorAll('.styles_thumbnail__cFAy3').forEach(el => {
