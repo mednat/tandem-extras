@@ -311,22 +311,45 @@ const listingsHandler = (() => {
         } catch (err) { console.error(`error getting face gender for id ${id}`, err); }
     }
 
-    const unhiddenProfiles = new Set();
-    unsafeWindow.toggleHiddenProfiles = () => {
-        if (unhiddenProfiles.size) {
-            console.debug('re-hiding profiles...');
-            unhiddenProfiles.forEach(id => document.getElementById(id).style.display = 'none');
-            return unhiddenProfiles.clear();
-        }
-
-        console.debug('unhiding profiles...');
-        document.querySelectorAll('.styles_thumbnail__cFAy3').forEach(el => {
-            if (el.style.display === 'none') {
-                unhiddenProfiles.add(el.id);
-                el.style.display = '';
-                el.style.backgroundColor = 'rgba(172, 146, 87, 0.65)';
+    //TODO: set element properties instead of storing global sets -- also maybe split this into two methods?
+    const unhiddenProfiles = new Set(); 
+    const unhiddenGStyledProfiles = new Set(); 
+    unsafeWindow.toggleHiddenProfiles = (gStyledOnly = false) => {
+        if (gStyledOnly) {
+            if(unhiddenGStyledProfiles.size) {
+                console.debug('re-hiding gStyled profiles...');
+                unhiddenGStyledProfiles.forEach(id => document.getElementById(id).style.display = 'none');
+                return unhiddenGStyledProfiles.clear();
             }
-        });
+
+            if(unhiddenProfiles.size) console.error('cannot unhide gStyled only when already unhidden profiles');
+
+            console.debug('unhiding gStyled profiles...');
+            document.querySelectorAll('.styles_thumbnail__cFAy3').forEach(el => {
+                if (el.gStyled && el.style.display === 'none') {
+                    unhiddenGStyledProfiles.add(el.id);
+                    el.style.display = '';
+                    el.style.backgroundColor = 'rgba(174, 144, 82, 0.79)';
+                }
+            });
+        } else {
+            if (unhiddenProfiles.size) {
+                console.debug('re-hiding profiles...');
+                unhiddenProfiles.forEach(id => document.getElementById(id).style.display = 'none');
+                return unhiddenProfiles.clear();
+            }
+
+            if(unhiddenGStyledProfiles.size) console.error('cannot unhide when already unhidden gStyled profiles');
+
+            console.debug('unhiding profiles...');
+            document.querySelectorAll('.styles_thumbnail__cFAy3').forEach(el => {
+                if (el.style.display === 'none') {
+                    unhiddenProfiles.add(el.id);
+                    el.style.display = '';
+                    el.style.backgroundColor = 'rgba(168, 165, 156, 0.38)';
+                }
+            });
+        }
     }
 
     let maleProbThreshold = 0.8;
@@ -375,6 +398,7 @@ const listingsHandler = (() => {
             selectedForBatchHide.forEach(el => {
                 hidelist.add(el.id);
                 el.style.display = 'none';
+                el.gStyled = false;
             });
 
             await GM.setValue(HIDELIST, [...hidelist]);
@@ -437,10 +461,12 @@ const listingsHandler = (() => {
                             img = await loadImage(imgSrc);
                         } catch (err) { console.error(err); }
 
-                        Object.assign(el.style, (hidelist.has(id) || chattedCache.has(id))
-                            ? { display: 'none' }
-                            : getStyleForGender(getGenderByName(name), await getGenderByPhotoAndCache(img, id, photoGenderCache), maleProbThreshold)
-                        );
+                        if (hidelist.has(id) || chattedCache.has(id)) {
+                            el.style.display = 'none';
+                        } else {
+                            Object.assign(el.style, getStyleForGender(getGenderByName(name), await getGenderByPhotoAndCache(img, id, photoGenderCache), maleProbThreshold));
+                            el.gStyled = true;
+                        }
                     } catch (err) { console.error(`filterProfiles error for ${el.id}`, err); }
                 })
             );
