@@ -464,8 +464,11 @@ const listingsHandler = (() => {
                         if (hidelist.has(id) || chattedCache.has(id)) {
                             el.style.display = 'none';
                         } else {
-                            Object.assign(el.style, getStyleForGender(getGenderByName(name), await getGenderByPhotoAndCache(img, id, photoGenderCache), maleProbThreshold));
+                            const nameMP = getGenderByName(name);
+                            const faceMP = await getGenderByPhotoAndCache(img, id, photoGenderCache)
+                            Object.assign(el.style, getStyleForGender(nameMP, faceMP, maleProbThreshold));
                             el.gStyled = true;
+                            Object.assign(el.dataset, { nameMP: String(nameMP), faceMP: String(faceMP) });
                         }
                     } catch (err) { console.error(`filterProfiles error for ${el.id}`, err); }
                 })
