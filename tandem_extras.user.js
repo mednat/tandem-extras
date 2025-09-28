@@ -314,48 +314,21 @@ const listingsHandler = (() => {
         } catch (err) { console.error(`error getting face gender for id ${id}`, err); }
     }
 
-    unsafeWindow.toggleHiddenGStyledProfiles = () => {
-        const uGSPs = [...document.querySelectorAll('.styles_thumbnail__cFAy3')].filter(e => e.uGSP);
-        console.debug('ugsp', uGSPs.length);
-        if(uGSPs.length) {
-            console.debug('re-hiding gStyled profiles...');
-            uGSPs.forEach(el => {
-                el.style.display = 'none';
-                el.uGSP = false;
-            });
+    let gTagHidden = { 'm': true, 'f': false };
+    unsafeWindow.toggleShowProfilesByGTag = (g) => { // g: 'm' | 'f'
+        const gprofs = [...document.querySelectorAll('.styles_thumbnail__cFAy3')].filter(el => el.gTag == g);
+        if(!gTagHidden[g]) {
+            console.debug(`hiding ${g}-tagged profiles...`);
+            gprofs.forEach(el => el.style.display = 'none');
+            gTagHidden[g] = true;
         } else {
-            if(unhiddenProfiles.size) return console.error('cannot unhide gStyled only when already unhidden profiles');
-
-            console.debug('unhiding gStyled profiles...');
-            document.querySelectorAll('.styles_thumbnail__cFAy3').forEach(el => {
-                if (el.gStyled && el.style.display === 'none') {
-                    el.uGSP = true;
-                    el.style.display = '';
-                    el.style.backgroundColor = 'rgba(174, 144, 82, 0.79)';
-                }
-            });
-        }
-    }
-
-    //TODO: set element properties instead of storing global sets
-    const unhiddenProfiles = new Set(); 
-    unsafeWindow.toggleHiddenProfiles = () => {
-        if (unhiddenProfiles.size) {
-            console.debug('re-hiding profiles...');
-            unhiddenProfiles.forEach(id => document.getElementById(id).style.display = 'none');
-            return unhiddenProfiles.clear();
-        }
-
-        if([...document.querySelectorAll('.styles_thumbnail__cFAy3')].filter(e => e.uGSP).length) return console.error('cannot unhide when already unhidden gStyled profiles');
-
-        console.debug('unhiding profiles...');
-        document.querySelectorAll('.styles_thumbnail__cFAy3').forEach(el => {
-            if (el.style.display === 'none') {
-                unhiddenProfiles.add(el.id);
+            console.debug(`unhiding ${g}-tagged profiles...`);
+            gprofs.forEach(el => {
                 el.style.display = '';
-                el.style.backgroundColor = 'rgba(168, 165, 156, 0.38)';
-            }
-        });
+                if (g == 'm') el.style.backgroundColor = 'rgba(174, 144, 82, 0.79)';
+            });
+            gTagHidden[g] = false;
+        }
     }
 
     let maleProbThreshold = 0.8;
@@ -473,7 +446,7 @@ const listingsHandler = (() => {
                             const nameMP = getGenderByName(name);
                             const faceMP = await getGenderByPhotoAndCache(img, id, photoGenderCache)
                             Object.assign(el.style, getStyleForGender(nameMP, faceMP, maleProbThreshold));
-                            el.gStyled = true;
+                            el.gTag = (el.style.display == 'none') ? 'm': 'f'; // TODO: cleanly separate display logic from gender determination logic
                             Object.assign(el.dataset, { nameMP: String(nameMP), faceMP: String(faceMP) });
                         }
                     } catch (err) { console.error(`filterProfiles error for ${el.id}`, err); }
