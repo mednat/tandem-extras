@@ -479,7 +479,6 @@ const listingsHandler = (() => {
                 filterProfiles();
                 addBatchHideButton();
                 addOpenAllVisibleProfilesButton();
-                addThresholdBox();
             }
         });
         waitForListings.observe(document.body, { childList: true, subtree: true });
