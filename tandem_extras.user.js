@@ -239,7 +239,7 @@ const profileHandler = (() => {
 })();
 
 const listingsHandler = (() => {
-    function getStyleForGender(nameMP, faceMP) {
+    function getStyleForGender(nameMP, faceMP, mpThreshold) {
         const myPink = 'rgba(255, 119, 149, .99)';
         const myPurple = 'rgba(250, 128, 250, .99)';
         const myIndigo = 'rgba(167, 120, 255, .99)';
@@ -315,17 +315,19 @@ const listingsHandler = (() => {
         });
     }
 
+    let maleProbThreshold = 0.8;
     function addThresholdBox() {
         const thresholdBox = document.createElement("label");
         thresholdBox.textContent = 'maleProb cutoff: ';
         thresholdBox.style.cssText = 'position:fixed; bottom:200px; left:10px; z-index:10000; padding:10px;';
 
-        const input = Object.assign(document.createElement("input"), { type: "number", min: 0, max: 1, step: 0.01 });
+        const input = Object.assign(document.createElement("input"), { type: "number", min: 0, max: 1, step: 0.01, value: maleProbThreshold });
         thresholdBox.appendChild(input);
         document.body.appendChild(thresholdBox);
 
         input.addEventListener('change', () => {
             input.value = Math.min(1, Math.max(0, parseFloat(input.value) || 0));
+            maleProbThreshold = input.value;
             console.log(input.value);
         });
     }
@@ -423,7 +425,7 @@ const listingsHandler = (() => {
 
                         Object.assign(el.style, (hidelist.has(id) || chattedCache.has(id))
                             ? { display: 'none' }
-                            : getStyleForGender(getGenderByName(name), await getGenderByPhotoAndCache(img, id, photoGenderCache))
+                            : getStyleForGender(getGenderByName(name), await getGenderByPhotoAndCache(img, id, photoGenderCache), maleProbThreshold)
                         );
                     } catch (err) { console.error(`filterProfiles error for ${el.id}`, err); }
                 })
