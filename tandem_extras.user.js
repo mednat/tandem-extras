@@ -243,22 +243,36 @@ const listingsHandler = (() => {
         const myPink = 'rgba(255, 119, 149, .99)';
         const myPurple = 'rgba(250, 128, 250, .99)';
         const myIndigo = 'rgba(167, 120, 255, .99)';
+        const myAqua = 'rgba(120, 255, 203, 0.99)';
+        const myLime = 'rgba(203, 255, 120, 0.99)';
+
+        /* TODO: combine scores better -- current hiding logic:
+            - if only one MP, if significiantly high, hide TODO: make dynamic
+            - if both near enough to threshold, hide
+            - if both above 50% and one passes threshold, hide
+
+            - average for color indicator if the two MPs aren't too far apart
+            
+
+            [] independently controle faceMP and nameMP?
+        */
 
         if (!faceMP && !nameMP) return {};
-        if (!faceMP) return (nameMP > 0.9) ? { display: 'none' } : { backgroundColor: `${myPink.split('.')[0]}${1-(nameMP || 0.01)})` };
-        if (!nameMP) return (faceMP > 0.9) ? { display: 'none' } : { backgroundColor: `${myIndigo.split('.')[0]}${1-(faceMP || 0.01)})` };
+        if (!faceMP) return (nameMP > 0.90) ? { display: 'none' } : { backgroundColor: `${myPink.split('.')[0]}${1-(nameMP || 0.01)})` };
+        if (!nameMP) return (faceMP > 0.90) ? { display: 'none' } : { backgroundColor: `${myIndigo.split('.')[0]}${1-(faceMP || 0.01)})` };
 
-        //TODO: combine scores better
+        if (nameMP > mpThreshold*0.9 && faceMP > mpThreshold*0.9) return { display: 'none' };
 
-        if (nameMP > 0.7 && faceMP > 0.7) return { display: 'none' };
-        if (Math.min(nameMP,faceMP) > 0.5 && Math.max(nameMP, faceMP) > 0.8) return { display: 'none' };
+        if (Math.min(nameMP,faceMP) > 0.5 && Math.max(nameMP, faceMP) > mpThreshold) return { display: 'none' };
 
         if (Math.abs(faceMP - nameMP) < 0.3) {
             const aveMP = (faceMP + nameMP) / 2;
             return { backgroundColor: `${myPurple.split('.')[0]}${1-(aveMP || 0.01)})` };
+        } else if (nameMP < faceMP) {
+            return { backgroundColor: `${myLime.split('.')[0]}${1-(nameMP || 0.01)})` };
+        } else {
+            return { backgroundColor: `${myAqua.split('.')[0]}${1-(faceMP || 0.01)})` };
         }
-
-        return (nameMP > 0.95) ? { display: 'none' } : { backgroundColor: `${myPurple.split('.')[0]}${1-(nameMP || 0.01)})` };
     }
 
     function getGenderByName(rawName) {
