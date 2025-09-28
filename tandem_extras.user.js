@@ -314,45 +314,46 @@ const listingsHandler = (() => {
         } catch (err) { console.error(`error getting face gender for id ${id}`, err); }
     }
 
-    //TODO: set element properties instead of storing global sets -- also maybe split this into two methods?
-    const unhiddenProfiles = new Set(); 
+    //TODO: set element properties instead of storing global sets
     const unhiddenGStyledProfiles = new Set(); 
-    unsafeWindow.toggleHiddenProfiles = (gStyledOnly = false) => {
-        if (gStyledOnly) {
-            if(unhiddenGStyledProfiles.size) {
-                console.debug('re-hiding gStyled profiles...');
-                unhiddenGStyledProfiles.forEach(id => document.getElementById(id).style.display = 'none');
-                return unhiddenGStyledProfiles.clear();
-            }
-
-            if(unhiddenProfiles.size) console.error('cannot unhide gStyled only when already unhidden profiles');
-
-            console.debug('unhiding gStyled profiles...');
-            document.querySelectorAll('.styles_thumbnail__cFAy3').forEach(el => {
-                if (el.gStyled && el.style.display === 'none') {
-                    unhiddenGStyledProfiles.add(el.id);
-                    el.style.display = '';
-                    el.style.backgroundColor = 'rgba(174, 144, 82, 0.79)';
-                }
-            });
-        } else {
-            if (unhiddenProfiles.size) {
-                console.debug('re-hiding profiles...');
-                unhiddenProfiles.forEach(id => document.getElementById(id).style.display = 'none');
-                return unhiddenProfiles.clear();
-            }
-
-            if(unhiddenGStyledProfiles.size) console.error('cannot unhide when already unhidden gStyled profiles');
-
-            console.debug('unhiding profiles...');
-            document.querySelectorAll('.styles_thumbnail__cFAy3').forEach(el => {
-                if (el.style.display === 'none') {
-                    unhiddenProfiles.add(el.id);
-                    el.style.display = '';
-                    el.style.backgroundColor = 'rgba(168, 165, 156, 0.38)';
-                }
-            });
+    unsafeWindow.toggleHiddenGStyledProfiles = () => {
+        if(unhiddenGStyledProfiles.size) {
+            console.debug('re-hiding gStyled profiles...');
+            unhiddenGStyledProfiles.forEach(id => document.getElementById(id).style.display = 'none');
+            return unhiddenGStyledProfiles.clear();
         }
+
+        if(unhiddenProfiles.size) console.error('cannot unhide gStyled only when already unhidden profiles');
+
+        console.debug('unhiding gStyled profiles...');
+        document.querySelectorAll('.styles_thumbnail__cFAy3').forEach(el => {
+            if (el.gStyled && el.style.display === 'none') {
+                unhiddenGStyledProfiles.add(el.id);
+                el.style.display = '';
+                el.style.backgroundColor = 'rgba(174, 144, 82, 0.79)';
+            }
+        });
+    }
+
+    //TODO: set element properties instead of storing global sets
+    const unhiddenProfiles = new Set(); 
+    unsafeWindow.toggleHiddenProfiles = () => {
+        if (unhiddenProfiles.size) {
+            console.debug('re-hiding profiles...');
+            unhiddenProfiles.forEach(id => document.getElementById(id).style.display = 'none');
+            return unhiddenProfiles.clear();
+        }
+
+        if(unhiddenGStyledProfiles.size) console.error('cannot unhide when already unhidden gStyled profiles');
+
+        console.debug('unhiding profiles...');
+        document.querySelectorAll('.styles_thumbnail__cFAy3').forEach(el => {
+            if (el.style.display === 'none') {
+                unhiddenProfiles.add(el.id);
+                el.style.display = '';
+                el.style.backgroundColor = 'rgba(168, 165, 156, 0.38)';
+            }
+        });
     }
 
     let maleProbThreshold = 0.8;
