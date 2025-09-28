@@ -336,7 +336,7 @@ const listingsHandler = (() => {
         const btn = document.createElement('button');
         btn.id = 'batchHide';
         btn.textContent = 'batch hide';
-        btn.style.cssText = 'position:fixed; bottom:10px; left:10px; z-index:10000; padding:10px; display:none;';
+        btn.style.cssText = 'position:fixed; bottom:10px; left:10px; z-index:10000; padding:10px;';
 
         btn.addEventListener('click', async () => {
             const hidelist = new Set(await GM.getValue(HIDELIST, []));
@@ -348,15 +348,12 @@ const listingsHandler = (() => {
 
             await GM.setValue(HIDELIST, [...hidelist]);
             selectedForBatchHide.clear();
-            btn.style.display = selectedForBatchHide.size > 0 ? 'block' : 'none';
         });
 
         document.body.appendChild(btn);
-        batchHideButton = btn;
     }
 
     const selectedForBatchHide = new Set();
-    let batchHideButton; // TODO: more elegant way than global ref to button
     function addBatchHideSelectListener(el) {
         el.addEventListener('click', (e) => {
             if (e.altKey) {
@@ -368,9 +365,6 @@ const listingsHandler = (() => {
                     el.style.outline = '2px solid blue';
                 }
                 
-                if (!batchHideButton) console.error('no batch hide button!');
-                batchHideButton.style.display = selectedForBatchHide.size > 0 ? 'block' : 'none';
-
                 e.preventDefault();
                 e.stopPropagation();
             }
