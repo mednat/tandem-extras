@@ -267,6 +267,7 @@ const listingsHandler = (() => {
         if (Math.min(nameMP,faceMP) > 0.4 && Math.max(nameMP, faceMP) > mpThreshold) return { display: 'none' };
 
         if (nameMP > 0.95 && faceMP > 0.1) return { display: 'none' };
+        if (nameMP > 0.98 && faceMP > 0.05) return { display: 'none' };
 
         if (Math.abs(faceMP - nameMP) < 0.3) {
             const aveMP = (faceMP + nameMP) / 2;
