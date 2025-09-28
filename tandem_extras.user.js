@@ -315,6 +315,21 @@ const listingsHandler = (() => {
         });
     }
 
+    function addThresholdBox() {
+        const thresholdBox = document.createElement("label");
+        thresholdBox.textContent = 'maleProb cutoff: ';
+        thresholdBox.style.cssText = 'position:fixed; bottom:200px; left:10px; z-index:10000; padding:10px;';
+
+        const input = Object.assign(document.createElement("input"), { type: "number", min: 0, max: 1, step: 0.01 });
+        thresholdBox.appendChild(input);
+        document.body.appendChild(thresholdBox);
+
+        input.addEventListener('change', () => {
+            input.value = Math.min(1, Math.max(0, parseFloat(input.value) || 0));
+            console.log(input.value);
+        });
+    }
+
     function addOpenAllVisibleProfilesButton() {
         const btn = document.createElement('button');
         btn.id = 'openAllVisibleProfiles';
@@ -439,7 +454,7 @@ const listingsHandler = (() => {
                 filterProfiles();
                 addBatchHideButton();
                 addOpenAllVisibleProfilesButton();
-
+                addThresholdBox();
             }
         });
         waitForListings.observe(document.body, { childList: true, subtree: true });
