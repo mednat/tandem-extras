@@ -193,7 +193,7 @@ const profileHandler = (() => {
         document.body.appendChild(notification);
     }
 
-    async function toggleHidelistInclusion() {
+    async function toggleHidelistInclusion(fromBlock) {
         const hidelist = new Set(await GM.getValue(HIDELIST, []));
 
         const id = location.pathname.split('/').pop();
@@ -201,12 +201,15 @@ const profileHandler = (() => {
 
         const deleted = hidelist.delete(id);
         await GM.setValue(HIDELIST, [...(deleted ? hidelist : hidelist.add(id))]);
-        createAlertBanner(`Profile ${id} ${deleted ? 'removed from' : 'added to'} hidelist.`, deleted ? 'rgb(55, 255, 142)' : 'rgb(255, 55, 112)');
+        if (!fromBlock) createAlertBanner(`Profile ${id} ${deleted ? 'removed from' : 'added to'} hidelist.`, deleted ? 'rgb(55, 255, 142)' : 'rgb(255, 55, 112)');
     }
 
     async function toggleBlockUserFromProfile() {
         console.log('toggling Tandem-block user from profile page...');
         try {
+            toggleHidelistInclusion(true); 
+            // TODO: ensure block-hide alignment (currently undesired behavior if manually added to hidelist and then Tandem-blocked)
+
             const moreOptionsButton = document.querySelector('[data-popover="moreOptionsPopover"]');
             moreOptionsButton.click();
 
