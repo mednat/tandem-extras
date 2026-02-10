@@ -87,7 +87,7 @@ async function loadImage(url) {
 }
 
 const chatsHandler = (() => {
-    function getActiveChatId() {
+    function getActiveChatId() { //TODO: move to top level, not specific to chatsHandler (e.g. see toggleHidelistInclusion)
         const id = location.pathname.split('/').pop();
         if (!id) return console.error('no profile id found in chat path');
         if (id === 'chats') return console.error('no active chat selected');
@@ -108,6 +108,10 @@ const chatsHandler = (() => {
             moreOptionsButton.click();
             (await waitForElement('i[name="block"]', moreOptionsButton)).click();
             (await waitForElement('button.styles_button__td6Xf.styles_warning__QmUuQ')).click();
+
+            const hidelist = new Set(await GM.getValue(HIDELIST, []));
+            await GM.setValue(HIDELIST, [...hidelist.add(getActiveChatId())]);
+
         } catch (error) { console.error('Error during UI-based blocking:', error); }
     }
 
