@@ -87,6 +87,14 @@ async function loadImage(url) {
 }
 
 const chatsHandler = (() => {
+    function getActiveChatId() {
+        const id = location.pathname.split('/').pop();
+        if (!id) return console.error('no profile id found in chat path');
+        if (id === 'chats') return console.error('no active chat selected');
+
+        return id;
+    }
+
     function navigateChats(direction) {
         const chats = [...document.querySelectorAll('.styles_conversationLink__w7AZy')];
         chats[(direction + chats.findIndex(c => c.classList.contains('styles_active__zmQpO')))]?.click();
@@ -116,11 +124,7 @@ const chatsHandler = (() => {
         }
     };
     function deleteActiveChat() {
-        const id = location.pathname.split('/').pop();
-        if (!id) return console.error('no profile id found in chat path');
-        if (id === 'chats') return console.error('no active chat selected');
-
-        const chatToDelete = document.getElementById('conversation_'+id)
+        const chatToDelete = document.getElementById('conversation_'+getActiveChatId())
         chatIdToSelect = chatToDelete.nextElementSibling?.id || chatToDelete.previousElementSibling?.id;
         deleteChat(chatToDelete);
     }
