@@ -432,8 +432,9 @@ const listingsHandler = (() => {
             const photoGenderCache = await GM.getValue(PHOTO_GENDER_CACHE_KEY, {});
 
             await Promise.all([...document.querySelectorAll(
-                    '.styles_thumbnail__cFAy3'+
-                    ':not(.styles_skeleton__J2O6m)' +
+                    '.styles-module-scss-module__L6PQWG__thumbnail'+
+                    // '.styles_thumbnail__cFAy3'+
+                    ':not(.styles_skeleton__J2O6m)' + // what is this for?
                     ':not([style*="display: none"])'
                 )].map(async (el) => {
                     try {
@@ -483,7 +484,6 @@ const listingsHandler = (() => {
         if (!faceapi.nets.ssdMobilenetv1.isLoaded || !faceapi.nets.ageGenderNet.isLoaded) return;
 
         const waitForListings = new MutationObserver(async () => {
-            // const listingsGrid = document.querySelector('.styles_grid__YwDSM');
             const listingsGrid = document.querySelector('.styles-module-scss-module__YZDwsa__grid');
             if (listingsGrid) {
                 console.debug('found listingsGrid')
