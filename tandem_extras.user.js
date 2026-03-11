@@ -170,7 +170,8 @@ const chatsHandler = (() => {
 
 const profileHandler = (() => {
     function navigateSlideshow(direction) {
-        const slidesDiv = document.querySelector('.styles_slides___NkWa');
+        // const slidesDiv = document.querySelector('.styles_slides___NkWa');
+        const slidesDiv = document.querySelector('.styles-module-scss-module__nBS-dW__slides');
         if (!slidesDiv) return document.querySelector('img.styles_profilePicture__XAMpQ')?.click(); // open slideshow
         (slidesDiv.querySelector(`i[name="arrow_${direction}"]`))?.click();
     }
@@ -231,7 +232,8 @@ const profileHandler = (() => {
             'ArrowRight': () => navigateSlideshow('forward'),
             'ArrowDown': () => navigateSlideshow('forward'),
             ' ': () => navigateSlideshow('forward'),
-            'Escape': () => document.querySelector('.styles_outsideContent__B7e2g')?.click(), // exit slideshow
+            // 'Escape': () => document.querySelector('.styles_outsideContent__B7e2g')?.click(), // exit slideshow
+            'Escape': () => document.querySelector('.styles-module-scss-module__lpg_Kq__outsideContent')?.click(), // exit slideshow
             'b': () => handleDoubleKeypress('b', toggleHidelistInclusion),
             'B': () => handleDoubleKeypress('B', toggleBlockUserFromProfile),
         }[e.key]?.());
