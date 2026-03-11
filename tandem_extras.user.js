@@ -434,12 +434,16 @@ const listingsHandler = (() => {
             const chattedCache = new Set(await GM.getValue(CHATTED_CACHE, []));
             const photoGenderCache = await GM.getValue(PHOTO_GENDER_CACHE_KEY, {});
 
-            await Promise.all([...document.querySelectorAll(
+            const profiles =[...document.querySelectorAll(
                     '.styles-module-scss-module__L6PQWG__thumbnail'+
                     // '.styles_thumbnail__cFAy3'+
                     ':not(.styles_skeleton__J2O6m)' + // what is this for?
                     ':not([style*="display: none"])'
-                )].map(async (el) => {
+                )];
+            
+            console.log('profiles found: ', profiles.map(e => e.id));
+
+            await Promise.all(profiles.map(async (el) => {
                     try {
                         const id = el.id;
                         const {src: imgSrc , alt: name} = el.querySelector('div img');
