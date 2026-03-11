@@ -483,8 +483,10 @@ const listingsHandler = (() => {
         if (!faceapi.nets.ssdMobilenetv1.isLoaded || !faceapi.nets.ageGenderNet.isLoaded) return;
 
         const waitForListings = new MutationObserver(async () => {
-            const listingsGrid = document.querySelector('.styles_grid__YwDSM');
+            // const listingsGrid = document.querySelector('.styles_grid__YwDSM');
+            const listingsGrid = document.querySelector('.styles-module-scss-module__YZDwsa__grid');
             if (listingsGrid) {
+                console.debug('found listingsGrid')
                 waitForListings.disconnect();
                 profileListingsObserver.observe(listingsGrid, { childList: true });
                 filterProfiles();
