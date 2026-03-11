@@ -424,7 +424,8 @@ const listingsHandler = (() => {
         console.log('filterProfiles executing');
 
         // hide 'highlighted profiles'
-        document.querySelector('.styles_HighlightedProfileBanner___0ts_, .styles_highlightedProfilesBanner__SMBNK')?.style.setProperty('display','none'); 
+        // document.querySelector('.styles_HighlightedProfileBanner___0ts_, .styles_highlightedProfilesBanner__SMBNK')?.style.setProperty('display','none'); 
+        document.querySelector('.styles-module-scss-module__ZTDuoa__HighlightedProfileBanner, .styles-module-scss-module__YZDwsa__highlightedProfilesBanner')?.style.setProperty('display','none'); 
 
         try {
             const hidelist = new Set(await GM.getValue(HIDELIST, []));
