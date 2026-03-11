@@ -436,12 +436,11 @@ const listingsHandler = (() => {
 
             const profiles =[...document.querySelectorAll(
                     '.styles-module-scss-module__L6PQWG__thumbnail'+
-                    // '.styles_thumbnail__cFAy3'+
-                    ':not(.styles_skeleton__J2O6m)' + // what is this for?
+                    ':not(.styles-module-scss-module__L6PQWG__skeleton)' + 
                     ':not([style*="display: none"])'
                 )];
             
-            console.log('profiles found: ', profiles.map(e => e.id));
+            console.debug('profiles found: ', profiles);
 
             await Promise.all(profiles.map(async (el) => {
                     try {
