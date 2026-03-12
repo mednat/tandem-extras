@@ -116,15 +116,19 @@ const chatsHandler = (() => {
     }
 
     async function deleteChat(chat) {
-        const deleteButton = chat.querySelector('button.styles_DeleteButton__R18h8');
+        const deleteButton = chat.querySelector('button.styles-module-scss-module__Uh2fna__DeleteButton');
         deleteButton.click();
-        (await waitForElement('div.styles_popover__JU1jB li.styles_warning__Ge5m5', deleteButton)).click();
-        (await waitForElement('button.styles_button__td6Xf.styles_warning__QmUuQ')).click();
+        console.debug('clicked deletebutton');
+        (await waitForElement('i[name="delete"]', deleteButton)).click();
+        console.debug('found popover');
+        (await waitForElement('button.styles-module-scss-module__D-2Qra__warning')).click();
+        console.debug('clicked confirm delete');
+        
     }
 
     unsafeWindow.deleteChatsWithString = async (s) => {
-        for (const chat of document.querySelectorAll('.styles_InfiniteScrollContainer__rYqKF li.styles_Conversation__IoGWS')) {
-            if (chat.querySelector('.styles_conversationPreview__qsCW9 p')?.textContent.includes(s)) await deleteChat(chat);
+        for (const chat of document.querySelectorAll('.styles-module-scss-module__Uh2fna__Conversation')) {
+            if (chat.querySelector('.styles-module-scss-module__XX3yqG__conversationPreview p')?.textContent.includes(s)) await deleteChat(chat);
         }
     };
     function deleteActiveChat() {
