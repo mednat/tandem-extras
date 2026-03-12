@@ -172,7 +172,7 @@ const profileHandler = (() => {
     function navigateSlideshow(direction) {
         // const slidesDiv = document.querySelector('.styles_slides___NkWa');
         const slidesDiv = document.querySelector('.styles-module-scss-module__nBS-dW__slides');
-        if (!slidesDiv) return document.querySelector('img.styles_profilePicture__XAMpQ')?.click(); // open slideshow
+        if (!slidesDiv) return document.querySelector('img.styles-module-scss-module__UpCcUG__profilePicture')?.click(); // open slideshow
         (slidesDiv.querySelector(`i[name="arrow_${direction}"]`))?.click();
     }
 
@@ -369,11 +369,7 @@ const listingsHandler = (() => {
         btn.style.cssText = 'position:fixed; bottom:60px; left:10px; z-index:10000; padding:10px;';
 
         btn.addEventListener('click', () => {
-            document.querySelectorAll(
-                        '.styles_thumbnail__cFAy3'+
-                        ':not(.styles_skeleton__J2O6m)' +
-                        ':not([style*="display: none"])'
-            ).forEach(el => window.open(el.href, '_blank'));
+            document.querySelectorAll(profilesSelector).forEach(el => window.open(el.href, '_blank'));
         });
 
         document.body.appendChild(btn);
@@ -419,6 +415,11 @@ const listingsHandler = (() => {
         });
     }
 
+    const profilesSelector = '.styles-module-scss-module__L6PQWG__thumbnail'+
+                    ':not(.styles-module-scss-module__L6PQWG__skeleton)' + 
+                    ':not([style*="display: none"])';
+
+
     const alreadyFilteredCache = new Set();
     let filterProfilesExecution = Promise.resolve();
     async function filterProfiles() { filterProfilesExecution = (async () => {
@@ -434,11 +435,7 @@ const listingsHandler = (() => {
             const chattedCache = new Set(await GM.getValue(CHATTED_CACHE, []));
             const photoGenderCache = await GM.getValue(PHOTO_GENDER_CACHE_KEY, {});
 
-            const profiles =[...document.querySelectorAll(
-                    '.styles-module-scss-module__L6PQWG__thumbnail'+
-                    ':not(.styles-module-scss-module__L6PQWG__skeleton)' + 
-                    ':not([style*="display: none"])'
-                )];
+            const profiles =[...document.querySelectorAll(profilesSelector)];
             
             console.debug('profiles found: ', profiles);
 
