@@ -256,6 +256,17 @@ const profileHandler = (() => {
 })();
 
 const listingsHandler = (() => {
+
+    async function fetchProfileData(el) {
+        const res = await fetch(el.href);
+        const html = await res.text();
+        const doc = new DOMParser().parseFromString(html, 'text/html');
+
+        const loc = doc.querySelector('i[name="pin_drop"]')?.parentElement.querySelector('p').textContent;
+        console.log(`loc is ${loc}`);
+    }
+
+
     function getStyleForGender(nameMP, faceMP, mpThreshold) {
         const myPink = 'rgba(255, 119, 149, .99)';
         const myPurple = 'rgba(250, 128, 250, .99)';
