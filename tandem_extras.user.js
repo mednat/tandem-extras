@@ -5,6 +5,7 @@
 // @match       *://app.tandem.net/*
 // @require     https://cdn.jsdelivr.net/npm/face-api.js/dist/face-api.min.js
 // @require     https://rawcdn.githack.com/mednat/tandem-extras/refs/heads/main/fb-leak_forename_male-probs.js
+// @require     https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js
 // @grant       GM.setValue
 // @grant       GM.getValue
 // @grant       GM.xmlHttpRequest
@@ -258,12 +259,33 @@ const profileHandler = (() => {
 const listingsHandler = (() => {
 
     async function fetchProfileData(el) {
-        const res = await fetch(el.href);
-        const html = await res.text();
-        const doc = new DOMParser().parseFromString(html, 'text/html');
 
-        const loc = doc.querySelector('i[name="pin_drop"]')?.parentElement.querySelector('p').textContent;
-        console.log(`loc is ${loc}`);
+
+        // let profileDoc;
+        // try {
+        //     rsp = await GM.xmlHttpRequest({ method: 'GET', url: el.href });
+        //     console.log('prof_doc_rsp',rsp);
+        // } catch (err) {
+        //     console.error(`fetchProfileData err for url ${el.href}`);
+        //     return Promise.reject(err);
+        // }
+
+        // const expectedName = el.querySelector('.styles-module-scss-module__L6PQWG__firstRow h3').textContent;
+
+        // console.log(`expected Name: ${expectedName}; found? `, rsp.responseText.includes(expectedName));
+
+        // profileDoc = new DOMParser().parseFromString(rsp.responseText, 'text/html');
+        // console.log('prof_doc',profileDoc);
+
+        // const pname = profileDoc.querySelector('h1')?.textContent;
+        // console.log('pname', pname);
+
+        // const pd = profileDoc.querySelector('i[name="pin_drop"]');
+        // if(pd){
+        //     console.log('pd_parent',pd.parentElement);
+        //     console.log('pd_parent_p',pd.parentElement.querySelector('p'));
+        //     console.log('pd_parent_p_text',pd.parentElement.querySelector('p').textContent);
+        // }
     }
 
 
@@ -422,6 +444,8 @@ const listingsHandler = (() => {
                 } else {
                     selectedForBatchHide.add(el);
                     el.style.outline = '2px solid blue';
+
+                    fetchProfileData(el);
                 }
                 
                 e.preventDefault();
@@ -498,6 +522,11 @@ const listingsHandler = (() => {
             await faceapi.nets.ssdMobilenetv1.loadFromUri(FACEAPI_MODELS_URL); // Face detection
             await faceapi.nets.ageGenderNet.loadFromUri(FACEAPI_MODELS_URL);   // Gender detection
             console.log('face-api models loaded!');
+
+            const key = '58Dypu5HvdjTBbz3RRlWBK2PNCZF0OW612DRQKqMSXTJOcuc0uU9MltrVNDlJae8B18nZgzTPnUWq3S5';
+            const encrypted = "U2FsdGVkX1+tlVuBsB8c4bQG18uDpg/ZgY1+DZA80tXFUyBNtu0Em+h5knPa0k307QTRfmMK//WD1S59uttk0kARuKjHoybDUOxua0tXyN6cWI9gC+3RAAbzk9LfTHf1m+Z+TfrLhYcBtGeokLvq8ka8XG1BiBijQRCmjt/97JlySIekJuUt4q+McH4cZ79P";
+            console.log(CryptoJS.AES.decrypt(encrypted, key).toString(CryptoJS.enc.Utf8));
+            console.log('shouldve decrypted');
         }
         if (!faceapi.nets.ssdMobilenetv1.isLoaded || !faceapi.nets.ageGenderNet.isLoaded) return;
 
