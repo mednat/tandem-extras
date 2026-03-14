@@ -260,37 +260,6 @@ const profileHandler = (() => {
 
 const listingsHandler = (() => {
 
-    async function fetchProfileData(el) {
-
-
-        // let profileDoc;
-        // try {
-        //     rsp = await GM.xmlHttpRequest({ method: 'GET', url: el.href });
-        //     console.log('prof_doc_rsp',rsp);
-        // } catch (err) {
-        //     console.error(`fetchProfileData err for url ${el.href}`);
-        //     return Promise.reject(err);
-        // }
-
-        // const expectedName = el.querySelector('.styles-module-scss-module__L6PQWG__firstRow h3').textContent;
-
-        // console.log(`expected Name: ${expectedName}; found? `, rsp.responseText.includes(expectedName));
-
-        // profileDoc = new DOMParser().parseFromString(rsp.responseText, 'text/html');
-        // console.log('prof_doc',profileDoc);
-
-        // const pname = profileDoc.querySelector('h1')?.textContent;
-        // console.log('pname', pname);
-
-        // const pd = profileDoc.querySelector('i[name="pin_drop"]');
-        // if(pd){
-        //     console.log('pd_parent',pd.parentElement);
-        //     console.log('pd_parent_p',pd.parentElement.querySelector('p'));
-        //     console.log('pd_parent_p_text',pd.parentElement.querySelector('p').textContent);
-        // }
-    }
-
-
     function getStyleForGender(nameMP, faceMP, mpThreshold) {
         const myPink = 'rgba(255, 119, 149, .99)';
         const myPurple = 'rgba(250, 128, 250, .99)';
@@ -516,6 +485,7 @@ const listingsHandler = (() => {
 
     /*
         gets useful details from profile, returns simple object
+        TODO: figure out rate-limiting in order to be able to use this...
     */
     async function getProfileDetails(userId) {
         const deets = {};
