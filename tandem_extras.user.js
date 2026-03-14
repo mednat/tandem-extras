@@ -518,9 +518,9 @@ const listingsHandler = (() => {
         gets useful details from profile, returns simple object
     */
     async function getProfileDetails(userId) {
+        const deets = {};
         const profData = await getProfileDataHelper(userId, "v1/users#getByUser");
         const profAnswers = await getProfileDataHelper(userId, "v1/users#getOnboardingAnswers");
-        const deets = {};
 
         deets.answerText = profAnswers?.map(a => a.text).join('\n');
 
@@ -543,11 +543,9 @@ const listingsHandler = (() => {
 
     async function getProfileDataHelper(userId, action) {
             const usId = atob(decodeURIComponent(userId));
-
             const payload = JSON.stringify({"action":action,"arguments":{"userId":usId}});
             const encryptedPayload = CryptoJS.AES.encrypt(payload, ENCRYPTION_KEY).toString();
 
-            // console.log(`requesting ${action}...`);
             const rsp = await GM.xmlHttpRequest({
                 method: 'POST',
                 url: 'https://app.tandem.net/api/funtik/v1/users',
@@ -555,8 +553,7 @@ const listingsHandler = (() => {
                 data: JSON.stringify({ payload: encryptedPayload }),
             });
 
-            const rspObj = JSON.parse(CryptoJS.AES.decrypt(JSON.parse(rsp.responseText), ENCRYPTION_KEY).toString(CryptoJS.enc.Utf8)).response;
-            return rspObj;
+            return JSON.parse(CryptoJS.AES.decrypt(JSON.parse(rsp.responseText), ENCRYPTION_KEY).toString(CryptoJS.enc.Utf8)).response;
     }
 
     let faceapiModelsLoading = false;
@@ -569,17 +566,6 @@ const listingsHandler = (() => {
             await faceapi.nets.ssdMobilenetv1.loadFromUri(FACEAPI_MODELS_URL); // Face detection
             await faceapi.nets.ageGenderNet.loadFromUri(FACEAPI_MODELS_URL);   // Gender detection
             console.log('face-api models loaded!');
-
-            const testUserIds = [
-                "MzcyNTczMzM%3D",
-                "MzcyNjQ5ODA%3D",
-                "OTI4MzQ1Ng%3D%3D",
-
-            ];
-            for (const testUserId of testUserIds) {
-                console.log(`testing ${testUserId}`);
-                console.log(await getProfileDetails(testUserId));
-            }
         }
         if (!faceapi.nets.ssdMobilenetv1.isLoaded || !faceapi.nets.ageGenderNet.isLoaded) return;
 
