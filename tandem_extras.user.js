@@ -554,11 +554,9 @@ if (window.scriptInitialized) return; // in case of multiple script injections
 window.scriptInitialized = true;
 
 const followedIds = await getFollowingList();
-console.log('followed ids: ', followedIds);
 GM.setValue(FOLLOWING_LIST, followedIds);
 
 const blockedIds = await getBlockedList();
-console.log('blocked ids: ', blockedIds);
 GM.setValue(BLOCKED_LIST, blockedIds);
 
 async function handlePathChange(path) {
