@@ -519,60 +519,45 @@ const listingsHandler = (() => {
     return { visit, cleanup };
 })();
 
+const BLOCKED_LIST = 'blockedList';
+const FOLLOWING_LIST = 'followingList';
+
+//TODO: add check for when limits reached and need to be bumped
+async function getBlockedList() {
+    const blocked = await fetchData('/v2/users', "v2/users#listBlocked", {"limit":200});
+    return blocked.map((user) => encodeUserId(user.id));
+}
+
+async function getFollowingList() {
+    const followings = await fetchData('/v2/users', "v2/users#listFollowing", {"limit":100});
+    return followings.map((user) => encodeUserId(user.id));
+}
 
 function encodeUserId(userId) { return encodeURIComponent(btoa(userId)); } // numerical -> string found in profile URLs
 function decodeUserId(userId) { return atob(decodeURIComponent(userId)); } // string found in profile URLs -> numerical
 
 const ENCRYPTION_KEY = '58Dypu5HvdjTBbz3RRlWBK2PNCZF0OW612DRQKqMSXTJOcuc0uU9MltrVNDlJae8B18nZgzTPnUWq3S5';
-async function getProfileDataHelper(userId, action) {
-            const usId = atob(decodeURIComponent(userId));
-            const payload = JSON.stringify({"action":action,"arguments":{"userId":usId}});
-            const encryptedPayload = CryptoJS.AES.encrypt(payload, ENCRYPTION_KEY).toString();
-
-            const rsp = await GM.xmlHttpRequest({
-                method: 'POST',
-                url: 'https://app.tandem.net/api/funtik/v1/users',
-                headers: { 'Content-Type': 'application/json' },
-                data: JSON.stringify({ payload: encryptedPayload }),
-            });
-
-            return JSON.parse(CryptoJS.AES.decrypt(JSON.parse(rsp.responseText), ENCRYPTION_KEY).toString(CryptoJS.enc.Utf8)).response;
-    }
-
 async function fetchData(path, action, args) {
     const payload = JSON.stringify({"action":action,"arguments":args});
-    const encryptedPayload = CryptoJS.AES.encrypt(payload, ENCRYPTION_KEY).toString();
 
     const rsp = await GM.xmlHttpRequest({
         method: 'POST',
         url: 'https://app.tandem.net/api/funtik'+path,
         headers: { 'Content-Type': 'application/json' },
-        data: JSON.stringify({ payload: encryptedPayload }),
+        data: JSON.stringify({ payload: CryptoJS.AES.encrypt(payload, ENCRYPTION_KEY).toString() }),
     });
 
     return JSON.parse(CryptoJS.AES.decrypt(JSON.parse(rsp.responseText), ENCRYPTION_KEY).toString(CryptoJS.enc.Utf8)).response;
 }
 
-async function getBlockedList() {
-    const blocked = await fetchData('/v2/users', "v2/users#listBlocked", {"limit":50});
-    return blockedIds = blocked.map((user) => encodeUserId(user.id));
-}
-
-async function getFollowingList() {
-    const followings = await fetchData('/v2/users', "v2/users#listFollowing", {"limit":50});
-    return followedIds = followings.map((user) => encodeUserId(user.id));
-}
-
 if (window.scriptInitialized) return; // in case of multiple script injections
 window.scriptInitialized = true;
 
+GM.setValue(BLOCKED_LIST, await getBlockedList());
+GM.setValue(FOLLOWING_LIST, await getFollowingList());
+
 async function handlePathChange(path) {
     console.log(`path is ${path}`);
-
-    const followedIds = await getFollowingList();
-    console.log('followed ids: ', followedIds);
-    const blockedIds = await getBlockedList();
-    console.log('blocked ids: ', blockedIds);
 
     [listingsHandler, profileHandler, chatsHandler].forEach(h => h.cleanup());
 
