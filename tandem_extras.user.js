@@ -522,9 +522,9 @@ const listingsHandler = (() => {
 const BLOCKED_LIST = 'blockedList';
 const FOLLOWING_LIST = 'followingList';
 
-//TODO: add check for when limits reached and need to be bumped
+//TODO: handle limits higher than 100 (endpoint doesn't accept as arg)
 async function getBlockedList() {
-    const blocked = await fetchData('/v2/users', "v2/users#listBlocked", {"limit":200});
+    const blocked = await fetchData('/v2/users', "v2/users#listBlocked", {"limit":100});
     return blocked.map((user) => encodeUserId(user.id));
 }
 
@@ -553,8 +553,13 @@ async function fetchData(path, action, args) {
 if (window.scriptInitialized) return; // in case of multiple script injections
 window.scriptInitialized = true;
 
-GM.setValue(BLOCKED_LIST, await getBlockedList());
-GM.setValue(FOLLOWING_LIST, await getFollowingList());
+const followedIds = await getFollowingList();
+console.log('followed ids: ', followedIds);
+GM.setValue(FOLLOWING_LIST, followedIds);
+
+const blockedIds = await getBlockedList();
+console.log('blocked ids: ', blockedIds);
+GM.setValue(BLOCKED_LIST, blockedIds);
 
 async function handlePathChange(path) {
     console.log(`path is ${path}`);
