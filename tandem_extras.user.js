@@ -13,6 +13,8 @@
 // @top-level-await
 // ==/UserScript==
 
+// FIXME: updateing classes -- search querySelector(All), waitForElement, classList, getElementById
+// then fix profileSelector
 'use strict';
 
 const firstNameMaleProbs = window.firstNameMaleProbs;
@@ -90,32 +92,30 @@ const chatsHandler = (() => {
         return id;
     }
 
-    ACTIVE_CHAT_CLASS = 'Uh2fna_active';
-
     function navigateChats(direction) {
         const chats = [...document.querySelectorAll('.Uh2fna_Conversation')];
-        chats[(direction + chats.findIndex(c => c.classList.contains(ACTIVE_CHAT_CLASS)))]?.click();
+        chats[(direction + chats.findIndex(c => c.classList.contains('Uh2fna_active')))]?.click();
     }
 
     async function deleteChat(chat) {
-        const deleteButton = chat.querySelector('button.styles-module-scss-module__Uh2fna__DeleteButton');
+        const deleteButton = chat.querySelector('button.Uh2fna__DeleteButton');
         deleteButton.click();
         console.debug('clicked deletebutton');
-        (await waitForElement('i[name="delete"]', deleteButton)).click();
+        (await waitForElement('i[name="delete"]', deleteButton)).click();// try class 0AFkGa_popover if breaks
         console.debug('found popover');
-        (await waitForElement('button.styles-module-scss-module__D-2Qra__warning')).click();
+        (await waitForElement('button.D-2Qra_button D-2Qra_warning')).click();
         console.debug('clicked confirm delete');
         
     }
 
     unsafeWindow.deleteChatsWithString = async (s) => {
-        for (const chat of document.querySelectorAll('.styles-module-scss-module__Uh2fna__Conversation')) {
-            if (chat.querySelector('.styles-module-scss-module__XX3yqG__conversationPreview p')?.textContent.includes(s)) await deleteChat(chat);
+        for (const chat of document.querySelectorAll('.Uh2fna_Conversation')) {
+            if (chat.querySelector('.XX3yqG__conversationPreview p')?.textContent.includes(s)) await deleteChat(chat);
         }
     };
     function deleteActiveChat() {
         const chatToDelete = document.getElementById('conversation_'+getActiveChatId())
-        chatIdToSelect = chatToDelete.nextElementSibling?.id || chatToDelete.previousElementSibling?.id;
+        chatToSelect_id = chatToDelete.nextElementSibling?.id || chatToDelete.previousElementSibling?.id;
         deleteChat(chatToDelete);
     }
 
@@ -128,12 +128,12 @@ const chatsHandler = (() => {
         }[e.key]?.());
     }
 
-    let chatIdToSelect;
+    let chatToSelect_id;
     let chattedCache;
     async function visit(id) {
-        if (chatIdToSelect) {
-            const chatToSelect = document.getElementById(chatIdToSelect)?.querySelector('a');
-            chatIdToSelect = null;
+        if (chatToSelect_id) {
+            const chatToSelect = document.getElementById(chatToSelect_id)?.querySelector('a');
+            chatToSelect_id = null;
             return chatToSelect?.click();
         }
 
@@ -155,9 +155,8 @@ const chatsHandler = (() => {
 
 const profileHandler = (() => {
     function navigateSlideshow(direction) {
-        // const slidesDiv = document.querySelector('.styles_slides___NkWa');
-        const slidesDiv = document.querySelector('.styles-module-scss-module__nBS-dW__slides');
-        if (!slidesDiv) return document.querySelector('img.styles-module-scss-module__UpCcUG__profilePicture')?.click(); // open slideshow
+        const slidesDiv = document.querySelector('.nBS-dW__slides');
+        if (!slidesDiv) return document.querySelector('img.UpCcUG__profilePicture')?.click(); // open slideshow
         (slidesDiv.querySelector(`i[name="arrow_${direction}"]`))?.click();
     }
 
@@ -197,8 +196,7 @@ const profileHandler = (() => {
             'ArrowRight': () => navigateSlideshow('forward'),
             'ArrowDown': () => navigateSlideshow('forward'),
             ' ': () => navigateSlideshow('forward'),
-            // 'Escape': () => document.querySelector('.styles_outsideContent__B7e2g')?.click(), // exit slideshow
-            'Escape': () => document.querySelector('.styles-module-scss-module__lpg_Kq__outsideContent')?.click(), // exit slideshow
+            'Escape': () => document.querySelector('.lpg_Kq__outsideContent')?.click(), // exit slideshow
             'b': () => handleDoubleKeypress('b', toggleHidelistInclusion),
         }[e.key]?.());
     }
@@ -294,7 +292,7 @@ const listingsHandler = (() => {
 
     let gTagHidden = { 'm': true, 'f': false };
     unsafeWindow.toggleShowProfilesByGTag = (g) => { // g: 'm' | 'f'
-        const gprofs = [...document.querySelectorAll('.styles_thumbnail__cFAy3')].filter(el => el.gTag == g);
+        const gprofs = [...document.querySelectorAll('.L6PQWG_thumbnail')].filter(el => el.gTag == g);
         if(!gTagHidden[g]) {
             console.debug(`hiding ${g}-tagged profiles...`);
             gprofs.forEach(el => el.style.display = 'none');
@@ -379,8 +377,8 @@ const listingsHandler = (() => {
         });
     }
 
-    const profilesSelector = '.styles-module-scss-module__L6PQWG__thumbnail'+
-                    ':not(.styles-module-scss-module__L6PQWG__skeleton)' + 
+    const profilesSelector = '.L6PQWG__thumbnail'+
+                    ':not(.L6PQWG__skeleton)' + 
                     ':not([style*="display: none"])';
 
 
@@ -449,7 +447,7 @@ const listingsHandler = (() => {
         if (!faceapi.nets.ssdMobilenetv1.isLoaded || !faceapi.nets.ageGenderNet.isLoaded) return;
 
         const waitForListings = new MutationObserver(async () => {
-            const listingsGrid = document.querySelector('.styles-module-scss-module__YZDwsa__grid');
+            const listingsGrid = document.querySelector('.YZDwsa__grid');
             if (listingsGrid) {
                 console.debug('found listingsGrid')
                 waitForListings.disconnect();
