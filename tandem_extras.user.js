@@ -504,9 +504,11 @@ const listingsHandler = (() => {
         });
         waitForListings.observe(document.body, { childList: true, subtree: true });
 
-        const chattedCacheDelta = (await GM.getValue(CHATTED_CACHE, [])).length - (await GM.getValue(LAST_BACKUP_CHATCACHE_SIZE, 0)) 
-        console.debug('chattedCache delta: ', chattedCacheDelta);
-        if (chattedCacheDelta > BACKUP_CHATCACHE_SIZE_INTERVAL) showBackupReminder(chattedCacheDelta);
+        const chattedCacheSize = (await GM.getValue(CHATTED_CACHE, [])).length;
+        const chattedCacheLastBkp = (await GM.getValue(LAST_BACKUP_CHATCACHE_SIZE, 0)) 
+        console.debug(`chattedCache size is: ${chattedCacheSize}; last backup at: ${chattedCacheLastBkp}`);
+        if ((delta = chattedCacheSize - chattedCacheLastBkp) > BACKUP_CHATCACHE_SIZE_INTERVAL)
+            showBackupReminder(delta);
     }
 
     function cleanup() {
