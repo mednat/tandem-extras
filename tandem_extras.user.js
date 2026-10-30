@@ -18,11 +18,13 @@
 const firstNameMaleProbs = window.firstNameMaleProbs;
 const FACEAPI_MODELS_URL = 'https://rawcdn.githack.com/justadudewhohacks/face-api.js/refs/heads/master/weights';
 
+unsafeWindow.getFirstNameMaleProb = (firstName) => firstNameMaleProbs[firstName];
+
+const BLOCKED_LIST = 'blockedList';
+const FOLLOWING_LIST = 'followingList';
 const CHATTED_CACHE = 'chattedCache';
 const HIDELIST = 'profileBlocklist'; //TODO: update GM storage varname
 const PHOTO_GENDER_CACHE_KEY = 'photoGenderCache';
-
-unsafeWindow.getFirstNameMaleProb = (firstName) => firstNameMaleProbs[firstName];
 
 const LAST_BACKUP_CHATCACHE_SIZE = 'lastBackupChattedCacheSize';
 const BACKUP_CHATCACHE_SIZE_INTERVAL = 200;
@@ -40,14 +42,6 @@ function showBackupReminder(delta) {
 
     banner.querySelector('button').onclick = async () => banner.remove();
 }
-
-// TODO: rename function, as hidelist isn't a "cache"
-unsafeWindow.checkBadCacheVals = async () => {
-    [HIDELIST, CHATTED_CACHE].forEach(async (gmKey) => {
-        if ((await GM.getValue(gmKey, [])).some(x => !x)) console.error(`falsy in ${gmKey}`);
-    });
-    if (Object.entries(await GM.getValue(PHOTO_GENDER_CACHE_KEY, {})).some(([k,v]) => !k || (!v && v!=0))) console.error(`falsy in ${PHOTO_GENDER_CACHE_KEY}`);
-};
 
 const handleDoubleKeypress = (() => {
     const keyPresses = new Map();
@@ -103,21 +97,6 @@ const chatsHandler = (() => {
         chats[(direction + chats.findIndex(c => c.classList.contains(ACTIVE_CHAT_CLASS)))]?.click();
     }
 
-    async function blockUserFromChat() {
-        console.log('Blocking user from chat page...');
-        if (!document.querySelector(`.${ACTIVE_CHAT_CLASS}`)) return; // no chat is selected
-        try {
-            const moreOptionsButton = document.querySelector('button[data-popover="moreOptionsPopover"]');
-            moreOptionsButton.click();
-            (await waitForElement('i[name="block"]', moreOptionsButton)).click();
-            (await waitForElement('button.styles_button__td6Xf.styles_warning__QmUuQ')).click();
-
-            const hidelist = new Set(await GM.getValue(HIDELIST, []));
-            await GM.setValue(HIDELIST, [...hidelist.add(getActiveChatId())]);
-
-        } catch (error) { console.error('Error during UI-based blocking:', error); }
-    }
-
     async function deleteChat(chat) {
         const deleteButton = chat.querySelector('button.styles-module-scss-module__Uh2fna__DeleteButton');
         deleteButton.click();
@@ -146,7 +125,6 @@ const chatsHandler = (() => {
             'j': () => navigateChats(1), //down
             'k': () => navigateChats(-1), //up
             'D': () => handleDoubleKeypress('D', deleteActiveChat),
-            'B': () => handleDoubleKeypress('B', blockUserFromChat),
         }[e.key]?.());
     }
 
@@ -212,26 +190,6 @@ const profileHandler = (() => {
         if (!fromBlock) createAlertBanner(`Profile ${id} ${deleted ? 'removed from' : 'added to'} hidelist.`, deleted ? 'rgb(55, 255, 142)' : 'rgb(255, 55, 112)');
     }
 
-    async function toggleBlockUserFromProfile() {
-        console.log('toggling Tandem-block user from profile page...');
-        try {
-            toggleHidelistInclusion(true); 
-            // TODO: ensure block-hide alignment (currently undesired behavior if manually added to hidelist and then Tandem-blocked)
-
-            const moreOptionsButton = document.querySelector('[data-popover="moreOptionsPopover"]');
-            moreOptionsButton.click();
-
-            const blockButton = (await waitForElement('.styles_moreOptionsPopover__SYQ_j', moreOptionsButton)).children[1];
-            const isBlocked = blockButton.textContent.includes('Unblock');
-            blockButton.click();
-
-            if(isBlocked) return createAlertBanner(`unblocked on Tandem!`, 'rgb(55, 255, 55)'); 
-
-            (await waitForElement('.styles_button__td6Xf.styles_warning__QmUuQ')).click();
-            createAlertBanner(`blocked on Tandem!`, 'rgb(255, 55, 55)');
-        } catch (error) { console.error('Error during UI-based blocking:', error); }
-    }
-
     function onProfileKeydown(e) {
         ({
             'ArrowLeft': () => navigateSlideshow('back'),
@@ -242,7 +200,6 @@ const profileHandler = (() => {
             // 'Escape': () => document.querySelector('.styles_outsideContent__B7e2g')?.click(), // exit slideshow
             'Escape': () => document.querySelector('.styles-module-scss-module__lpg_Kq__outsideContent')?.click(), // exit slideshow
             'b': () => handleDoubleKeypress('b', toggleHidelistInclusion),
-            'B': () => handleDoubleKeypress('B', toggleBlockUserFromProfile),
         }[e.key]?.());
     }
 
@@ -521,20 +478,6 @@ const listingsHandler = (() => {
     return { visit, cleanup };
 })();
 
-const BLOCKED_LIST = 'blockedList';
-const FOLLOWING_LIST = 'followingList';
-
-//TODO: handle limits higher than 100 (endpoint doesn't accept as arg)
-async function getBlockedList() {
-    const blocked = await fetchData('/v2/users', "v2/users#listBlocked", {"limit":100});
-    return blocked.map((user) => encodeUserId(user.id));
-}
-
-async function getFollowingList() {
-    const followings = await fetchData('/v2/users', "v2/users#listFollowing", {"limit":100});
-    return followings.map((user) => encodeUserId(user.id));
-}
-
 function encodeUserId(userId) { return encodeURIComponent(btoa(userId)); } // numerical -> string found in profile URLs
 function decodeUserId(userId) { return atob(decodeURIComponent(userId)); } // string found in profile URLs -> numerical
 
@@ -555,11 +498,9 @@ async function fetchData(path, action, args) {
 if (window.scriptInitialized) return; // in case of multiple script injections
 window.scriptInitialized = true;
 
-const followedIds = await getFollowingList();
-GM.setValue(FOLLOWING_LIST, followedIds);
-
-const blockedIds = await getBlockedList();
-GM.setValue(BLOCKED_LIST, blockedIds);
+//TODO: handle limits higher than 100 (endpoint doesn't accept as arg)
+GM.setValue(FOLLOWING_LIST, (await fetchData('/v2/users', "v2/users#listFollowing", {"limit":100})).map((user) => encodeUserId(user.id)));
+GM.setValue(BLOCKED_LIST, (await fetchData('/v2/users', "v2/users#listBlocked", {"limit":100})).map((user) => encodeUserId(user.id)));
 
 async function handlePathChange(path) {
     console.log(`path is ${path}`);
