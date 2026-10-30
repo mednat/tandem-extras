@@ -43,14 +43,6 @@ function showBackupReminder(delta) {
     banner.querySelector('button').onclick = async () => banner.remove();
 }
 
-// TODO: rename function, as hidelist isn't a "cache"
-unsafeWindow.checkBadCacheVals = async () => {
-    [HIDELIST, CHATTED_CACHE].forEach(async (gmKey) => {
-        if ((await GM.getValue(gmKey, [])).some(x => !x)) console.error(`falsy in ${gmKey}`);
-    });
-    if (Object.entries(await GM.getValue(PHOTO_GENDER_CACHE_KEY, {})).some(([k,v]) => !k || (!v && v!=0))) console.error(`falsy in ${PHOTO_GENDER_CACHE_KEY}`);
-};
-
 const handleDoubleKeypress = (() => {
     const keyPresses = new Map();
     return (key, action) => (Date.now() - keyPresses.get(key) < 250) ? action() : keyPresses.set(key, Date.now());
@@ -484,17 +476,6 @@ const listingsHandler = (() => {
     return { visit, cleanup };
 })();
 
-//TODO: handle limits higher than 100 (endpoint doesn't accept as arg)
-async function getBlockedList() {
-    const blocked = await fetchData('/v2/users', "v2/users#listBlocked", {"limit":100});
-    return blocked.map((user) => encodeUserId(user.id));
-}
-
-async function getFollowingList() {
-    const followings = await fetchData('/v2/users', "v2/users#listFollowing", {"limit":100});
-    return followings.map((user) => encodeUserId(user.id));
-}
-
 function encodeUserId(userId) { return encodeURIComponent(btoa(userId)); } // numerical -> string found in profile URLs
 function decodeUserId(userId) { return atob(decodeURIComponent(userId)); } // string found in profile URLs -> numerical
 
@@ -515,11 +496,9 @@ async function fetchData(path, action, args) {
 if (window.scriptInitialized) return; // in case of multiple script injections
 window.scriptInitialized = true;
 
-const followedIds = await getFollowingList();
-GM.setValue(FOLLOWING_LIST, followedIds);
-
-const blockedIds = await getBlockedList();
-GM.setValue(BLOCKED_LIST, blockedIds);
+//TODO: handle limits higher than 100 (endpoint doesn't accept as arg)
+GM.setValue(FOLLOWING_LIST, (await fetchData('/v2/users', "v2/users#listFollowing", {"limit":100})).map((user) => encodeUserId(user.id)));
+GM.setValue(BLOCKED_LIST, (await fetchData('/v2/users', "v2/users#listBlocked", {"limit":100})).map((user) => encodeUserId(user.id)));
 
 async function handlePathChange(path) {
     console.log(`path is ${path}`);
