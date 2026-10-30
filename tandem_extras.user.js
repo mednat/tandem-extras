@@ -13,8 +13,6 @@
 // @top-level-await
 // ==/UserScript==
 
-// FIXME: updateing classes -- search querySelector(All), waitForElement, classList, getElementById
-// then fix profileSelector
 'use strict';
 
 const firstNameMaleProbs = window.firstNameMaleProbs;
@@ -98,7 +96,7 @@ const chatsHandler = (() => {
     }
 
     async function deleteChat(chat) {
-        const deleteButton = chat.querySelector('button.Uh2fna__DeleteButton');
+        const deleteButton = chat.querySelector('button.Uh2fna_DeleteButton');
         deleteButton.click();
         console.debug('clicked deletebutton');
         (await waitForElement('i[name="delete"]', deleteButton)).click();// try class 0AFkGa_popover if breaks
@@ -110,7 +108,7 @@ const chatsHandler = (() => {
 
     unsafeWindow.deleteChatsWithString = async (s) => {
         for (const chat of document.querySelectorAll('.Uh2fna_Conversation')) {
-            if (chat.querySelector('.XX3yqG__conversationPreview p')?.textContent.includes(s)) await deleteChat(chat);
+            if (chat.querySelector('.XX3yqG_conversationPreview p')?.textContent.includes(s)) await deleteChat(chat);
         }
     };
     function deleteActiveChat() {
@@ -155,8 +153,8 @@ const chatsHandler = (() => {
 
 const profileHandler = (() => {
     function navigateSlideshow(direction) {
-        const slidesDiv = document.querySelector('.nBS-dW__slides');
-        if (!slidesDiv) return document.querySelector('img.UpCcUG__profilePicture')?.click(); // open slideshow
+        const slidesDiv = document.querySelector('.nBS-dW_slides');
+        if (!slidesDiv) return document.querySelector('img.UpCcUG_profilePicture')?.click(); // open slideshow
         (slidesDiv.querySelector(`i[name="arrow_${direction}"]`))?.click();
     }
 
@@ -196,7 +194,7 @@ const profileHandler = (() => {
             'ArrowRight': () => navigateSlideshow('forward'),
             'ArrowDown': () => navigateSlideshow('forward'),
             ' ': () => navigateSlideshow('forward'),
-            'Escape': () => document.querySelector('.lpg_Kq__outsideContent')?.click(), // exit slideshow
+            'Escape': () => document.querySelector('.lpg_Kq_outsideContent')?.click(), // exit slideshow
             'b': () => handleDoubleKeypress('b', toggleHidelistInclusion),
         }[e.key]?.());
     }
@@ -377,8 +375,8 @@ const listingsHandler = (() => {
         });
     }
 
-    const profilesSelector = '.L6PQWG__thumbnail'+
-                    ':not(.L6PQWG__skeleton)' + 
+    const profilesSelector = '.L6PQWG_thumbnail'+
+                    ':not(.L6PQWG_skeleton)' + 
                     ':not([style*="display: none"])';
 
 
@@ -447,7 +445,7 @@ const listingsHandler = (() => {
         if (!faceapi.nets.ssdMobilenetv1.isLoaded || !faceapi.nets.ageGenderNet.isLoaded) return;
 
         const waitForListings = new MutationObserver(async () => {
-            const listingsGrid = document.querySelector('.YZDwsa__grid');
+            const listingsGrid = document.querySelector('.YZDwsa_grid');
             if (listingsGrid) {
                 console.debug('found listingsGrid')
                 waitForListings.disconnect();
