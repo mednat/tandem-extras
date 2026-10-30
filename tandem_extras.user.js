@@ -96,14 +96,16 @@ const chatsHandler = (() => {
         return id;
     }
 
+    ACTIVE_CHAT_CLASS = 'Uh2fna_active';
+
     function navigateChats(direction) {
-        const chats = [...document.querySelectorAll('.styles_conversationLink__w7AZy')];
-        chats[(direction + chats.findIndex(c => c.classList.contains('styles_active__zmQpO')))]?.click();
+        const chats = [...document.querySelectorAll('.Uh2fna_Conversation')];
+        chats[(direction + chats.findIndex(c => c.classList.contains(ACTIVE_CHAT_CLASS)))]?.click();
     }
 
     async function blockUserFromChat() {
         console.log('Blocking user from chat page...');
-        if (!document.querySelector('.styles_active__zmQpO')) return; // no chat is selected
+        if (!document.querySelector(`.${ACTIVE_CHAT_CLASS}`)) return; // no chat is selected
         try {
             const moreOptionsButton = document.querySelector('button[data-popover="moreOptionsPopover"]');
             moreOptionsButton.click();
@@ -432,9 +434,7 @@ const listingsHandler = (() => {
         console.log('filterProfiles executing');
 
         // hide 'highlighted profiles'
-        // document.querySelector('.styles_HighlightedProfileBanner___0ts_, .styles_highlightedProfilesBanner__SMBNK')?.style.setProperty('display','none'); 
-        document.querySelector('.styles-module-scss-module__ZTDuoa__HighlightedProfileBanner, .styles-module-scss-module__YZDwsa__highlightedProfilesBanner')?.style.setProperty('display','none'); 
-
+        document.querySelector('.ZTDuoa_HighlightedProfileBanner, .YZDwsa_highlightedProfilesBanner')?.style.setProperty('display','none'); 
         try {
             const hidelist = new Set(await GM.getValue(HIDELIST, []));
             const chattedCache = new Set(await GM.getValue(CHATTED_CACHE, []));
